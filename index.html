@@ -15,13 +15,19 @@ aside{width:340px;border-left:1px solid var(--bd);background:var(--pn);overflow:
 .tabs{display:flex;gap:5px;margin-bottom:8px;flex-wrap:wrap}.tabs button{flex:1;padding:5px 6px;font-size:13px}table.ct{width:100%;border-collapse:collapse;font-size:12px}table.ct td,table.ct th{border-bottom:1px solid var(--bd);padding:3px 2px;text-align:right}table.ct td:first-child,table.ct th:first-child{text-align:left}
 .card{border:1px solid var(--bd);border-radius:8px;padding:8px 10px;margin:8px 0}
 .mu{color:var(--mu);font-size:12px}.row{display:flex;gap:6px;align-items:center;margin:4px 0;flex-wrap:wrap}
-.item{padding:3px 6px;border-radius:5px;cursor:pointer}.item:hover,.item.sel{background:#e8f0fe}
+.item{padding:3px 6px;border-radius:5px;cursor:pointer;transition:background .12s,box-shadow .12s}.item:hover{background:#f1f3f4}
+.item.sel{background:#d7e2f5;color:#174ea6;font-weight:500;box-shadow:inset 0 2px 4px rgba(32,33,36,.3),inset 0 0 0 1px rgba(26,115,232,.4);transform:translateY(1px)}
 .tag{font-size:11px;padding:1px 7px;border-radius:9px;background:#eef1f6}.tag.hi{background:#fde7e4;color:var(--rd)}
 .dims label{display:flex;flex-direction:column;font-size:11px;color:var(--mu)}.dims input{width:64px}
 ul{margin:4px 0;padding-left:18px}
 #banner{display:none;padding:8px 14px;font-weight:600;color:#fff}#banner.l1{display:block;background:#e37400}#banner.l2{display:block;background:#d93025;animation:fl 1s infinite}#banner.l3{display:block;background:#5f6368}@keyframes fl{50%{opacity:.6}}
 .vals{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}.vals div{text-align:center;border:1px solid var(--bd);border-radius:8px;padding:6px}.vals b{font-size:20px;display:block}
 canvas.sp{width:100%;height:46px;background:#f1f3f4;border-radius:6px;margin-top:4px}footer{padding:5px 12px;font-size:12px;color:var(--mu);border-top:1px solid var(--bd);background:#fff}
+.pets{display:grid;grid-template-columns:repeat(3,1fr);gap:4px}.pet{text-align:center;cursor:pointer;border-radius:10px;padding:4px 2px}.pet.sel{background:#e8f0fe}
+.pw{position:relative;width:96px;height:78px;margin:0 auto}.pw svg{position:absolute;left:0;top:0}.arc{transition:stroke-dasharray .9s ease,stroke .9s}
+.pe{transform-box:fill-box;transform-origin:50% 100%}.pe.h,.pe.j{animation:bob 1.3s ease-in-out infinite}.pe.j{animation-duration:.8s}.pe.s{transform:translateY(3px) scaleY(.92)}.pe.a{animation:shk .25s linear infinite alternate}.pe.z{opacity:.6}.pe.pat{animation:pat .5s}
+.eye{transform-box:fill-box;transform-origin:center;animation:blink 4s infinite}
+@keyframes bob{50%{transform:translateY(-4px)}}@keyframes pat{50%{transform:scale(1.25)}}@keyframes shk{from{transform:rotate(-3deg)}to{transform:rotate(3deg)}}@keyframes blink{0%,94%,100%{transform:scaleY(1)}97%{transform:scaleY(.1)}}
 @media(max-width:800px){main{flex-direction:column}aside{width:100%;height:48%;border-left:0;border-top:1px solid var(--bd)}}
 </style></head><body>
 <header><h1>Home Guardian</h1><button id="bDemo">Load demo living room</button><button id="bFile">Import scan (.json)</button>
@@ -46,8 +52,13 @@ const T={wall:['Wall','#94a3b8','s'],door:['Door','#b45309','s'],window:['Window
 sofa:['Sofa','#3b82f6'],chair:['Chair','#60a5fa'],table:['Table','#a1662f'],bed:['Bed','#6b8cae'],storage:['Cabinet','#78716c'],
 refrigerator:['Fridge','#9ca3af'],stove:['Stove','#c2410c'],oven:['Oven','#c2410c'],sink:['Sink','#a8a29e'],dishwasher:['Dishwasher','#9ca3af'],
 washerDryer:['Washer/dryer','#9ca3af'],toilet:['Toilet','#d1d5db'],bathtub:['Bathtub','#d1d5db'],television:['TV','#1f2937'],
-fireplace:['Fireplace','#c2410c'],stairs:['Stairs','#a3a3a3'],heater:['Heater','#dc2626'],other:['Other','#a3a3a3']};
+fireplace:['Fireplace','#c2410c'],stairs:['Stairs','#a3a3a3'],heater:['Heater','#dc2626'],ac:['Air conditioner','#e5e7eb'],fan:['Fan','#9ca3af'],other:['Other','#a3a3a3']};
 const HEAT=['stove','oven','fireplace','heater'],isS=t=>T[t][2]==='s';
+/* Devices: running watts (w), hours per day (h), on/off, plus setpoint (set) and aim in degrees (dir) for AC and fans.
+   RoomPlan finds fridges, ovens, washers and TVs; AC and fans are added by hand. Your app can drive them through window.setDevice(id,{on,w,dir}). */
+const DEV={ac:{w:900,h:8},fan:{w:40,h:8},refrigerator:{w:45,h:24,on:1},washerDryer:{w:500,h:.5},dishwasher:{w:1200,h:1},oven:{w:2000,h:1},heater:{w:1200,h:4},television:{w:100,h:4}},DEFD={ac:[.9,.3,.25,2.2],fan:[.4,1.2,.4,.6]};
+function ensureDev(it){const d=DEV[it.type];if(!d){delete it.dev;return}if(!it.dev||it.dev.t!==it.type)it.dev={t:it.type,on:!!d.on,w:d.w,h:d.h,set:26,dir:0,swing:false}}
+window.setDevice=(id,q)=>{const i=items.find(x=>x.id===id);if(i&&i.dev){Object.assign(i.dev,q);sync(i);refresh()}};
 
 /* ---- Scene ---- */
 const vp=$('#vp'),sc=new THREE.Scene();sc.background=new THREE.Color(0xf4f6f9);
@@ -77,7 +88,7 @@ function P(g,w,h,d,col,x,y,z,o={}){const geo=new THREE.BoxGeometry(Math.max(w,.0
  if(!o.ne){const e=new THREE.LineSegments(new THREE.EdgesGeometry(geo),new THREE.LineBasicMaterial({color:0x0f172a,transparent:true,opacity:.4}));e.position.copy(m.position);g.add(e)}return m}
 function C(g,r,h,col,x,y,z,o={}){const p={color:col,roughness:.6};if(o.tx)p.map=getTex(o.tx,col,r*6,h);
  const m=new THREE.Mesh(new THREE.CylinderGeometry(r,r,h,12),new THREE.MeshStandardMaterial(p));m.position.set(x,y,z);if(o.rx)m.rotation.x=Math.PI/2;g.add(m);return m}
-function model(g,t,sx,sy,sz,col){const lr=Math.max(.012,Math.min(sx,sz)*.05),D='#2b2f33',
+function model(g,t,sx,sy,sz,col,on){const lr=Math.max(.012,Math.min(sx,sz)*.05),D='#2b2f33',
  legs=(h,c,tx,fx,fz)=>[[-1,-1],[1,-1],[-1,1],[1,1]].forEach(([a,b])=>C(g,lr,h,c,a*sx*fx,h/2,b*sz*fz,{tx})),
  box=(c,tx,o)=>P(g,sx,sy,sz,c,0,sy/2,0,{tx,...o}),front=(w,h,y,c)=>P(g,sx*w,sy*h,.006,c,0,sy*y,sz/2+.003,{ne:1});
  if(t==='sofa'){P(g,sx,sy*.42,sz,col,0,sy*.21,0,{tx:'fabric'});P(g,sx,sy*.58,sz*.2,col,0,sy*.71,-sz*.4,{tx:'fabric'});
@@ -101,6 +112,8 @@ function model(g,t,sx,sy,sz,col){const lr=Math.max(.012,Math.min(sx,sz)*.05),D='
  else if(t==='fireplace'){box(col);P(g,sx*.5,sy*.45,.02,'#111827',0,sy*.3,sz/2+.01,{ne:1});P(g,sx*1.05,sy*.06,sz*1.1,'#78716c',0,sy*.97,0)}
  else if(t==='stairs'){const n=Math.max(2,Math.round(sy/.18));for(let i=0;i<n;i++)P(g,sx,sy*(i+1)/n,sz/n,col,0,sy*(i+1)/n/2,-sz/2+sz/n*(i+.5))}
  else if(t==='heater'){for(let i=0;i<6;i++)P(g,sx/8,sy*.9,sz,col,-sx*.42+i*sx*.168,sy*.5,0)}
+ else if(t==='ac'){P(g,sx,sy,sz,'#f3f4f6',0,sy/2,0);P(g,sx*.9,.02,.02,'#9ca3af',0,sy*.18,sz/2+.005,{ne:1});C(g,.012,.01,on?'#22c55e':'#9ca3af',sx*.4,sy*.7,sz/2+.006,{rx:1})}
+ else if(t==='fan'){const r=Math.min(sx,sz)*.5;C(g,r*.45,.03,'#374151',0,.015,0);C(g,.02,sy*.7,'#9ca3af',0,sy*.4,0);C(g,r*.9,.08,'#6b7280',0,sy*.85,0,{rx:1});C(g,r,.01,on?'#38bdf8':'#d1d5db',0,sy*.85,.06,{rx:1})}
  else if(t==='window'){const f=Math.max(.02,Math.min(sy,sz)*.08),F='#475569';
   P(g,sx,f,sz,F,0,sy-f/2,0);P(g,sx,f,sz,F,0,f/2,0);P(g,f,sy,sz,F,-sx/2+f/2,sy/2,0);P(g,f,sy,sz,F,sx/2-f/2,sy/2,0);P(g,sx,f*.6,sz,F,0,sy/2,0);P(g,f*.6,sy,sz,F,0,sy/2,0);
   P(g,sx*.94,sy*.94,sz*.5,col,0,sy/2,0,{op:.28,ne:1})}
@@ -114,11 +127,11 @@ function loadGLB(it,url){const ok=()=>items.includes(it)&&MODEL_URLS[it.type]===
   m.position.sub(c);const k=Math.min(sx/Math.max(.001,s.x),sy/Math.max(.001,s.y),sz/Math.max(.001,s.z));m.scale.setScalar(k);m.position.y+=s.y*k/2;g.add(m);paint(it)};
  if(glbCache[url])apply(glbCache[url]);else glbLoader.load(url,gl=>{glbCache[url]=gl;apply(gl)},undefined,e=>console.warn('Model failed, keeping procedural:',url,e))}
 function buildModel(it){const g=it.mesh;while(g.children.length){const c=g.children.pop();c.geometry?.dispose();c.material?.dispose()}
- const[sx,sy,sz]=it.dim;model(g,it.type,sx,sy,isS(it.type)?Math.max(sz,.06):sz,T[it.type][1]);
+ const[sx,sy,sz]=it.dim;model(g,it.type,sx,sy,isS(it.type)?Math.max(sz,.06):sz,T[it.type][1],it.dev&&it.dev.on);
  if(MODEL_URLS[it.type])loadGLB(it,MODEL_URLS[it.type]);g.position.set(it.x,it.y-sy/2,it.z);g.rotation.y=it.rot}
-function paint(it){let em=0;if(it===sel)em=0x333333;else if(tab==='ty'&&it.type==='window')em=0xb45309;else if(tab==='fire'&&HEAT.includes(it.type))em=0x991b1b;
- it.mesh.traverse(o=>{if(o.material&&o.material.emissive)o.material.emissive.set(em)})}
-function sync(it){buildModel(it);paint(it)}
+function paint(it){let em=0,ei=1;if(it===sel){em=0x4f8cff;ei=.55}else if(tab==='ty'&&it.type==='window')em=0xb45309;else if(tab==='fire'&&HEAT.includes(it.type))em=0x991b1b;
+ it.mesh.traverse(o=>{if(o.material&&o.material.emissive){o.material.emissive.set(em);o.material.emissiveIntensity=ei}})}
+function sync(it){ensureDev(it);buildModel(it);paint(it)}
 function addItem(e){const it={id:uid++,type:e.type,dim:[...e.dim],x:e.x,y:e.y,z:e.z,rot:e.rot,auto:e.auto!==false};
  it.mesh=new THREE.Group();it.mesh.userData.it=it;world.add(it.mesh);items.push(it);sync(it);return it}
 const of=t=>items.filter(i=>i.type===t),heats=()=>items.filter(i=>HEAT.includes(i.type));
@@ -167,7 +180,7 @@ $('#bDemo').onclick=()=>{const P=Math.PI/2,W=(x,z,r,l)=>({type:'wall',x,y:1.3,z,
  build([W(2.5,0,0,5),W(2.5,4,0,5),W(0,2,P,4),W(5,2,P,4),{type:'door',x:1,y:1,z:4,rot:0,dim:[.9,2,.1]},
  {type:'window',x:2,y:1.5,z:0,rot:0,dim:[1.6,1.4,.1]},{type:'window',x:5,y:1.05,z:1.5,rot:P,dim:[2.2,2.1,.1]},
  {type:'sofa',x:2,y:.45,z:3.1,rot:0,dim:[2,.9,.9]},{type:'table',x:2.2,y:.4,z:1.8,rot:0,dim:[1.2,.75,.7]},{type:'chair',x:4.4,y:.45,z:1.6,rot:0,dim:[.5,.9,.5]},
- {type:'storage',x:.4,y:.9,z:2.6,rot:P,dim:[1.2,1.8,.5]},{type:'stove',x:4.4,y:.45,z:.4,rot:0,dim:[.7,.9,.6]},{type:'refrigerator',x:3.5,y:.9,z:.4,rot:0,dim:[.7,1.8,.7]}],'Demo room')};
+ {type:'storage',x:.4,y:.9,z:2.6,rot:P,dim:[1.2,1.8,.5]},{type:'stove',x:4.4,y:.45,z:.4,rot:0,dim:[.7,.9,.6]},{type:'refrigerator',x:3.5,y:.9,z:.4,rot:0,dim:[.7,1.8,.7]},{type:'ac',x:.15,y:2.2,z:1.2,rot:P,dim:[.9,.3,.25]},{type:'fan',x:3.8,y:.6,z:3.4,rot:Math.PI,dim:[.4,1.2,.4]}],'Demo room');setDevice(14,{on:true,set:24,dir:20});setDevice(15,{on:true,dir:-18})};
 
 /* ---- Geometry helpers (meters) ---- */
 function rectDist(p,it){/* distance from point to the item's rotated footprint */
@@ -206,18 +219,18 @@ rd.domElement.onpointerup=e=>{if(!dn||Math.hypot(e.clientX-dn[0],e.clientY-dn[1]
  const b=rd.domElement.getBoundingClientRect();ray.setFromCamera(new THREE.Vector2((e.clientX-b.left)/b.width*2-1,-(e.clientY-b.top)/b.height*2+1),cam);
  if(pick){const p=new THREE.Vector3();if(ray.ray.intersectPlane(fl,p)){sensor={...(sensor||{}),x:p.x,z:p.z,y:Math.min(1.5,room.ceil-.5),
   dW:near(p,of('window')),dD:near(p,of('door')),dH:near(p,heats()),relaxed:false,manual:true};pick=false;refresh()}return}
- const h=ray.intersectObjects(world.children,true).find(x=>x.object.isMesh);let o=h&&h.object;while(o&&!o.userData.it)o=o.parent;sel=o?o.userData.it:null;refresh()};
+ const h=ray.intersectObjects(world.children,true).find(x=>x.object.isMesh);let o=h&&h.object;while(o&&!o.userData.it)o=o.parent;sel=o?o.userData.it:null;refresh();document.querySelector('#p-obj .item.sel')?.scrollIntoView({block:'nearest'})};
 
 /* ---- Panels ---- */
 document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{tab=b.dataset.t;refresh()});
-function refresh(){document.querySelectorAll('.tabs button').forEach(b=>b.classList.toggle('on',b.dataset.t===tab));
+function refresh(){document.querySelectorAll('.tabs button').forEach(b=>b.classList.toggle('on',b.dataset.t===tab));if(tab!=='obj')pObj();
  for(const k of['score','obj','ty','fire','air','cool'])$('#p-'+k).hidden=k!==tab;items.forEach(paint);
  ({score:pScore,obj:pObj,ty:pTy,fire:pFire,air:pAir,cool:pCool})[tab]();drawOv()}
 function pObj(){const opts=s=>Object.keys(T).map(k=>`<option value="${k}" ${k===s?'selected':''}>${T[k][0]}</option>`).join('');
  $('#p-obj').innerHTML=`<div class="mu">Types come from the scan. If one is wrong, select it (tap it in 3D or in the list) and change it. Sizes are in meters.</div>`+
  (sel?`<div class="card"><b>#${sel.id} ${T[sel.type][0]}</b> <span class="tag">${sel.auto?'from scan':'edited'}</span>
  <div class="row"><select id="tsel">${opts(sel.type)}</select><button id="bRot">Rotate 90°</button><button id="bDel" class="del">Delete</button></div>
- <div class="row dims">${[['W',sel.dim[0],'w'],['H',sel.dim[1],'h'],['D',sel.dim[2],'d'],['X',sel.x,'x'],['Z',sel.z,'z']].map(([l,v,k])=>`<label>${l}<input type="number" step=".05" data-k="${k}" value="${r2(v)}"></label>`).join('')}</div></div>`:'')+
+ <div class="row dims">${[['W',sel.dim[0],'w'],['H',sel.dim[1],'h'],['D',sel.dim[2],'d'],['X',sel.x,'x'],['Z',sel.z,'z']].map(([l,v,k])=>`<label>${l}<input type="number" step=".05" data-k="${k}" value="${r2(v)}"></label>`).join('')}</div>${sel.dev?devUI(sel):''}</div>`:'')+
  `<div class="row"><select id="addT">${opts('table')}</select><button id="bAdd">Add to room</button></div>
  <div class="card">${items.length?items.map(i=>`<div class="item ${i===sel?'sel':''}" data-i="${i.id}">#${i.id} ${T[i.type][0]}${i.auto?'':' (edited)'} <span class="mu">${r1(i.dim[0])}×${r1(i.dim[1])} m</span></div>`).join(''):'<span class="mu">Nothing yet. Import a scan or load the demo room.</span>'}</div>`;
  const s=$('#tsel');if(s){s.onchange=()=>{sel.type=s.value;sel.auto=false;recSensor();sync(sel);refresh()};
@@ -225,7 +238,7 @@ function pObj(){const opts=s=>Object.keys(T).map(k=>`<option value="${k}" ${k===
   $('#bDel').onclick=()=>{world.remove(sel.mesh);items=items.filter(i=>i!==sel);sel=null;recSensor();refresh()};
   document.querySelectorAll('.dims input').forEach(inp=>inp.onchange=()=>{const v=parseFloat(inp.value),k=inp.dataset.k;if(!(v===v))return;
    const bottom=sel.y-sel.dim[1]/2;if('whd'.includes(k)){sel.dim['whd'.indexOf(k)]=Math.max(.05,v);sel.y=bottom+sel.dim[1]/2}else sel[k]=v;sel.auto=false;recSensor();sync(sel);refresh()})}
- $('#bAdd').onclick=()=>{const t=$('#addT').value,h=isS(t)?1.2:.8;sel=addItem({type:t,x:0,y:h/2,z:0,rot:0,dim:isS(t)?[1,1.2,.1]:[.8,.8,.8],auto:false});recSensor();refresh()};
+ devWire();$('#bAdd').onclick=()=>{const t=$('#addT').value,g=DEFD[t]||(isS(t)?[1,1.2,.1,.6]:[.8,.8,.8,.4]);sel=addItem({type:t,x:0,y:g[3],z:0,rot:0,dim:g.slice(0,3),auto:false});recSensor();refresh()};
  document.querySelectorAll('#p-obj .item').forEach(d=>d.onclick=()=>{sel=items.find(i=>i.id==d.dataset.i);refresh()})}
 
 function pTy(){const ws=of('window').sort((a,b)=>b.dim[0]*b.dim[1]-a.dim[0]*a.dim[1]);
@@ -366,6 +379,8 @@ Fireplace=>壁爐
 Stairs=>樓梯
 Heater=>電暖器
 Other=>其他
+Air conditioner=>冷氣
+Fan=>風扇
 Types come from the scan. If one is wrong, select it (tap it in 3D or in the list) and change it. Sizes are in meters.=>類型來自掃描結果。若辨識錯誤，請選取它（點 3D 物件或清單）後修改。尺寸單位為公尺。
 from scan=>來自掃描
 edited=>已修改
@@ -517,9 +532,9 @@ function placeCool(){const ws=of('wall'),seats=items.filter(i=>['chair','sofa','
   if(O.some(o=>rectDist(p,o)<.5)||(near(p,ws)??9)<.4||!inside(p,ws))continue;const d=Math.hypot(x-T.x,z-T.z);if(!f||d<f.d)f={x,z,d,tx:far.x,tz:far.z}}
  cool.fan=f}
 const inside=(p,ws)=>{const xs=ws.map(w=>w.x),zs=ws.map(w=>w.z);return p.x>Math.min(...xs)&&p.x<Math.max(...xs)&&p.z>Math.min(...zs)&&p.z<Math.max(...zs)};
-function coolOv(){westWins().forEach(w=>{const a=w.dim[0]/2,b=w.dim[1]/2,p=[[-a,-b],[a,-b],[a,-b],[a,b],[a,b],[-a,b],[-a,b],[-a,-b]].map(([x,y])=>new THREE.Vector3(x,y,.06)),
+function coolOv(){devOv();westWins().forEach(w=>{const a=w.dim[0]/2,b=w.dim[1]/2,p=[[-a,-b],[a,-b],[a,-b],[a,b],[a,b],[-a,b],[-a,b],[-a,-b]].map(([x,y])=>new THREE.Vector3(x,y,.06)),
   l=new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(p),new THREE.LineBasicMaterial({color:0xe37400}));l.position.set(w.x,w.y,w.z);l.rotation.y=w.rot;ov.add(l)});
- const a=cool.ac,f=cool.fan,V=(x,y,z)=>new THREE.Vector3(x,y,z),ln=(p,c)=>new THREE.Line(new THREE.BufferGeometry().setFromPoints(p),new THREE.LineBasicMaterial({color:c}));
+ const a=of('ac').length?null:cool.ac,f=of('fan').length?null:cool.fan,V=(x,y,z)=>new THREE.Vector3(x,y,z),ln=(p,c)=>new THREE.Line(new THREE.BufferGeometry().setFromPoints(p),new THREE.LineBasicMaterial({color:c}));
  if(a){const m=new THREE.Mesh(new THREE.BoxGeometry(.9,.3,.25),new THREE.MeshBasicMaterial({color:0x1a73e8}));m.position.set(a.x,a.y,a.z);m.rotation.y=a.rot;ov.add(m,ln([V(a.x,a.y,a.z),V(a.x+a.nx*2.5,a.y-.7,a.z+a.nz*2.5)],0x1a73e8))}
  if(f){const c=new THREE.Mesh(new THREE.CylinderGeometry(.18,.18,.5,16),new THREE.MeshBasicMaterial({color:0x188038})),r=new THREE.Mesh(new THREE.RingGeometry(.48,.5,32),new THREE.MeshBasicMaterial({color:0x188038,side:THREE.DoubleSide}));
   c.position.set(f.x,.35,f.z);r.rotation.x=-Math.PI/2;r.position.set(f.x,.02,f.z);ov.add(c,r,ln([V(f.x,.8,f.z),V(f.tx,.8,f.tz)],0x188038))}}
@@ -552,7 +567,7 @@ function pCool(){placeCool();const W=of('window');
  <div class="mu">${Z('Prototype scope: window solar gain and AC/fan geometry are in. Not yet: zoned heat-load model, measured hourly weather, real equipment data.','原型範圍：已含窗戶日射得熱與冷氣／風扇幾何檢查。尚未含：熱負荷分區模型、實際逐時氣象、設備性能資料。')}</div>`;
  $('#cOpt').onchange=e=>{cool.opt=e.target.value;cool.shgc=OPTS[cool.opt][2];cool.vlt=OPTS[cool.opt][3];pCool()};
  document.querySelectorAll('#p-cool [data-k]').forEach(i=>i.onchange=()=>{cool[i.dataset.k]=+i.value;pCool()});
- document.querySelectorAll('#p-cool [data-w]').forEach(i=>i.onchange=()=>{cool.west[i.dataset.w]=i.checked;pCool();drawOv()});drawOv()}
+ document.querySelectorAll('#p-cool [data-w]').forEach(i=>i.onchange=()=>{cool.west[i.dataset.w]=i.checked;pCool();drawOv()});devCard();drawOv()}
 
 /* ================= Score overview: Safety / Energy / Pests ================= */
 let done={},alertMode=false;
@@ -571,8 +586,8 @@ function checks(){const C=[],L=(dim,id,en,zh,max,lost,why,tab,st,cd)=>C.push({di
  const fo=!!done.fan,so=['','',cool.shgc,cool.vlt],base=calc(OPTS.none,0).e,cur=calc(so,fo),pa=Math.max(0,cur.e-calc(OPTS.ext,fo).e),pb=fo?0:Math.max(0,calc(so,0).e-calc(so,1).e),f=v=>100*v/base;
  L('energy','sh','West-sun shading','西曬遮陽',60,f(pa),Z(`Best shading could save about ${r2(pa)} kWh/day (NT$ ${r1(pa*rate)})`,`最佳遮陽每日約可省 ${r2(pa)} 度（NT$ ${r1(pa*rate)}）`),'cool');
  L('energy','fan','Fan + higher setpoint','風扇＋調高設定溫度',20,f(pb),Z(`Net saving about ${r2(pb)} kWh/day after the fan's own power. Tick done if you already do this`,`扣掉風扇耗電後每日約省 ${r2(pb)} 度；若已在做請標記完成`),'cool',0,1);
- placeCool();if(cool.ac)L('energy','af','AC airflow path','冷氣氣流路徑',10,10*cool.ac.bl/cool.ac.n,Z(`${cool.ac.bl}/${cool.ac.n} seats blocked by tall furniture`,`${cool.ac.bl}/${cool.ac.n} 個座位被高家具擋住`),'cool');
- L('energy','pw','Live power draw','即時用電',10,r.W>=1500?10:0,has?Z(r.W>=1500?'Near the outlet circuit limit':'Within normal range','已接近插座迴路上限'.replace('已接近插座迴路上限',r.W>=1500?'已接近插座迴路上限':'在正常範圍')):Z('No power data','沒有用電資料'),'air',has?0:'unk');
+ placeCool();if(cool.ac&&!of('ac').length)L('energy','af','AC airflow path','冷氣氣流路徑',10,10*cool.ac.bl/cool.ac.n,Z(`${cool.ac.bl}/${cool.ac.n} seats blocked by tall furniture`,`${cool.ac.bl}/${cool.ac.n} 個座位被高家具擋住`),'cool');
+ devChecks(L);L('energy','pw','Live power draw','即時用電',10,r.W>=1500?10:0,has?Z(r.W>=1500?'Near the outlet circuit limit':'Within normal range','已接近插座迴路上限'.replace('已接近插座迴路上限',r.W>=1500?'已接近插座迴路上限':'在正常範圍')):Z('No power data','沒有用電資料'),'air',has?0:'unk');
  if(ws.length){let g=0;O.filter(o=>o.dim[1]>=.5).forEach(o=>{const c=Math.cos(o.rot),s=Math.sin(o.rot),hx=o.dim[0]/2,hz=o.dim[2]/2;
    [[hx+.01,0],[-hx-.01,0],[0,hz+.01],[0,-hz-.01]].forEach(([lx,lz])=>{const d=near({x:o.x+lx*c+lz*s,z:o.z-lx*s+lz*c},ws);if(d>.03&&d<.25)g++})});
   L('pest','gap','Narrow gaps by furniture','家具旁狹縫',30,g*6,Z(`${g} gap(s) of 3-25 cm between furniture and walls: dark, hard to clean`,`${g} 處家具與牆之間有 3–25 公分縫隙：陰暗、不易清潔`),'obj',0,1)}
@@ -582,22 +597,93 @@ function checks(){const C=[],L=(dim,id,en,zh,max,lost,why,tab,st,cd)=>C.push({di
  L('pest','ps','Pest sensor','害蟲感測器',0,0,Z('None connected: this score shows risk conditions, not detection','尚未連接：此分數只反映環境誘因，並非偵測'),'','unk');
  return C}
 function dimScore(d,C){const a=C.filter(c=>c.dim===d&&c.st!=='unk'&&c.max>0),p=a.reduce((s,c)=>s+c.max,0);return p?{pct:Math.round(100*(1-a.reduce((s,c)=>s+c.lost,0)/p)),n:a.length,tot:C.filter(c=>c.dim===d&&c.max>0).length}:null}
-function pScore(){if(!items.length){$('#p-score').innerHTML=`<div class="card">${Z('Load a scan or the demo room to see your score.','請先匯入掃描或載入範例房間，才會顯示分數。')}</div>`;return}
+/* ---- Pets: one per area. The arc is the area's score (stretches like a Pokemon GO CP arc); the mood follows the score.
+   A sad pet goes to check the details, i.e. the same advice cards as before, filtered to its area. ---- */
+const PETS={safe:[['hex','Shield','盾盾','#3b82f6'],['square','Block','方方','#6366f1'],['circle','Guard','護衛','#0ea5e9']],
+ energy:[['diamond','Volt','電電','#f59e0b'],['circle','Bulb','燈燈','#eab308'],['triangle','Zap','閃閃','#f97316']],
+ pest:[['circle','Puff','泡泡','#10b981'],['hex','Bit','小六','#84cc16'],['drop','Sprout','小芽','#14b8a6']]};
+/* Pets are plain shapes; the face shows the status: j joyful (90+), h happy (80+), o so-so (60+), s sad (40+), a alarmed (<40), z asleep (no data) */
+const SH={circle:'<circle cx="48" cy="43" r="21"/>',square:'<rect x="27" y="22" width="42" height="42" rx="11"/>',triangle:'<path d="M48 23L69 60H27Z" stroke-width="9"/>',
+ hex:'<path d="M48 21L66 32V54L48 65L30 54V32Z" stroke-width="8"/>',drop:'<path d="M48 20C58 33 69 42 69 52A21 21 0 0 1 27 52C27 42 38 33 48 20Z"/>',diamond:'<path d="M48 20L69 43L48 66L27 43Z" stroke-width="8"/>'},DY={triangle:8,drop:7};
+function face(m,dy){const c=43+(dy||0),k='#1f2937',e=(x,r)=>`<circle class="eye" cx="${x}" cy="${c-3}" r="${r||2.4}" fill="${k}"/>`,l=`stroke="${k}" stroke-width="2.2" fill="none" stroke-linecap="round"`;
+ return {j:`<path ${l} d="M37 ${c-2}q4-6 8 0M51 ${c-2}q4-6 8 0"/><path d="M41 ${c+5}q7 11 14 0Z" fill="${k}"/>`,
+ h:e(41)+e(55)+`<path ${l} d="M41 ${c+6}q7 7 14 0"/>`,o:e(41)+e(55)+`<path ${l} d="M42 ${c+9}h12"/>`,
+ s:e(41)+e(55)+`<path ${l} d="M36 ${c-9}l9 3M60 ${c-9}l-9 3M41 ${c+12}q7-7 14 0"/><ellipse cx="38" cy="${c+3}" rx="1.6" ry="2.6" fill="#60a5fa"/>`,
+ a:`<circle cx="41" cy="${c-3}" r="4.6" fill="#fff" stroke="${k}" stroke-width="1.5"/><circle cx="55" cy="${c-3}" r="4.6" fill="#fff" stroke="${k}" stroke-width="1.5"/><circle cx="41" cy="${c-3}" r="1.8" fill="${k}"/><circle cx="55" cy="${c-3}" r="1.8" fill="${k}"/><path ${l} d="M36 ${c-11}l9-3M60 ${c-11}l-9-3"/><ellipse cx="48" cy="${c+10}" rx="3" ry="4" fill="${k}"/><path d="M68 ${c-10}q3 5 0 7q-3-2 0-7Z" fill="#60a5fa"/>`,
+ z:`<path ${l} d="M38 ${c-3}h6M52 ${c-3}h6M44 ${c+8}h8"/><text x="66" y="${c-12}" font-size="10" fill="#5f6368" stroke="none">z</text>`}[m]}
+const petBody=(a,m)=>`<g class="pe ${m}" fill="${a[3]}" stroke="${a[3]}" stroke-linejoin="round" stroke-width="0">${SH[a[0]]}${face(m,DY[a[0]])}</g>`,
+ mini=(a,m)=>`<svg viewBox="20 14 56 56" width="30" height="30">${petBody(a,m)}</svg>`;
+let pi={},sd,pickPet=false,pv={},patD=null,lastSig='';
+try{pi=JSON.parse(localStorage.getItem('hgPets'))||{}}catch{}
+Object.keys(PETS).forEach(d=>{if(!(pi[d]>=0&&pi[d]<3))pi[d]=Math.floor(Math.random()*3)});
+const savePets=()=>{try{localStorage.setItem('hgPets',JSON.stringify(pi))}catch{}};
+function pScore(){if(!items.length){$('#p-score').innerHTML=`<div class="card">${Z('Load a scan or the demo room to see your score.','請先匯入掃描或載入範例房間，才會顯示分數。')}</div>`;lastSig='';return}
  const C=checks(),D={safe:dimScore('safe',C),energy:dimScore('energy',C),pest:dimScore('pest',C)},av=Object.values(D).filter(Boolean).map(d=>d.pct),all=av.length?Math.min(...av):null,nm=DN(),
- col=p=>p==null?'#9aa0a6':p>=80?'#188038':p>=60?'#e37400':'#d93025',
- dn=(p,z,lab,sub)=>{const r=z/2-8,cf=2*Math.PI*r;return `<div style="text-align:center"><svg width="${z}" height="${z}"><circle cx="${z/2}" cy="${z/2}" r="${r}" fill="none" stroke="#e8eaed" stroke-width="8"/><circle cx="${z/2}" cy="${z/2}" r="${r}" fill="none" stroke="${col(p)}" stroke-width="8" stroke-linecap="round" stroke-dasharray="${p==null?0:p/100*cf} ${cf}" transform="rotate(-90 ${z/2} ${z/2})"/><text x="50%" y="55%" text-anchor="middle" font-size="${z/4}" font-weight="700" fill="${col(p)}">${p==null?'--':p+'%'}</text></svg><div class="mu"><b>${lab}</b><br>${sub}</div></div>`},
- low=C.filter(c=>c.lost>0).sort((a,b)=>b.lost-a.lost),dd=C.filter(c=>done[c.id]),un=C.filter(c=>c.st==='unk');
- $('#p-score').innerHTML=`<div class="card"><div style="display:flex;justify-content:center">${dn(all,150,Z('Home quality','居家環境品質'),Z('lowest area sets the score','取最低的面向'))}</div>
- <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin-top:6px">${Object.keys(D).map(k=>dn(D[k]?D[k].pct:null,84,nm[k],D[k]?`${D[k].n}/${D[k].tot} ${Z('checks','項有資料')}`:Z('no data','無資料'))).join('')}</div>
- <div class="row"><label><input type="checkbox" id="aM" ${alertMode?'checked':''}> ${Z('Typhoon warning active (demo switch)','颱風警報中（示範開關）')}</label></div></div>
- <b>${Z('What to do first','優先處理')}</b>${low.length?low.slice(0,6).map(c=>`<div class="card"><div class="row"><b>${c.n}</b><span class="tag hi">-${Math.round(c.lost)}</span><span class="tag">${nm[c.dim]}</span></div><div class="mu">${c.why}</div>
- <div class="row"><button data-go="${c.tab}">${Z('Open','前往')}</button>${c.cd?`<button data-d="${c.id}">${Z('Mark done','標記完成')}</button>`:''}</div></div>`).join(''):`<div class="card">${Z('Nothing to fix right now.','目前沒有需要處理的項目。')}</div>`}
+ col=p=>p==null?'#9aa0a6':p>=80?'#188038':p>=60?'#e37400':'#d93025',mood=p=>p==null?'z':p>=90?'j':p>=80?'h':p>=60?'o':p>=40?'s':'a',
+ low=C.filter(c=>c.lost>0).sort((a,b)=>b.lost-a.lost),dd=C.filter(c=>done[c.id]),un=C.filter(c=>c.st==='unk'),
+ worst=Object.keys(D).filter(k=>D[k]&&D[k].pct<60).sort((a,b)=>D[a].pct-D[b].pct)[0]||null,cur=sd===undefined?worst:sd,
+ line={j:Z('Everything is great!','太棒了，一切順利！'),a:Z('Something is really wrong!','情況不妙，需要立刻處理！'),h:Z('All good here!','這裡一切都好！'),o:Z('A few things could be better.','有幾件事可以更好。'),s:Z("I'm worried… let me check the details.",'我有點擔心…我去檢查細項。'),z:Z('Zzz… waiting for data.','呼呼…等待資料。')},
+ sg=JSON.stringify([D,cur,pickPet,alertMode,lang,pi,C.map(c=>[c.id,c.lost,c.why,!!done[c.id]])]);
+ if(sg===lastSig&&$('#p-score').firstChild)return;lastSig=sg;/* skip identical re-renders so animations are not restarted every second */
+ const z=110,r=z/2-8,cf=2*Math.PI*r,big=`<div style="text-align:center"><svg width="${z}" height="${z}"><circle cx="${z/2}" cy="${z/2}" r="${r}" fill="none" stroke="#e8eaed" stroke-width="8"/><circle cx="${z/2}" cy="${z/2}" r="${r}" fill="none" stroke="${col(all)}" stroke-width="8" stroke-linecap="round" stroke-dasharray="${all==null?0:all/100*cf} ${cf}" transform="rotate(-90 ${z/2} ${z/2})"/><text x="50%" y="56%" text-anchor="middle" font-size="26" font-weight="700" fill="${col(all)}">${all==null?'--':all+'%'}</text></svg><div class="mu"><b>${Z('Home quality','居家環境品質')}</b><br>${Z('lowest area sets the score','取最低的面向')}</div></div>`,
+ pet=d=>{const p=D[d]?D[d].pct:null,m=mood(p),a=PETS[d][pi[d]];return `<div class="pet ${cur===d?'sel':''}" data-pet="${d}"><div class="pw"><svg viewBox="0 0 96 78" width="96" height="78"><path d="M8 62A40 40 0 0 1 88 62" fill="none" stroke="#e8eaed" stroke-width="7" stroke-linecap="round"/><path class="arc" data-v="${p==null?0:p}" pathLength="100" d="M8 62A40 40 0 0 1 88 62" fill="none" stroke="${col(p)}" stroke-width="7" stroke-linecap="round" style="stroke-dasharray:${pv[d]||0} 100"/><g transform="translate(48 50) scale(.78) translate(-48 -43)">${petBody(a,m)}</g>${m==='s'||m==='a'?'<circle cx="80" cy="60" r="5" fill="none" stroke="#5f6368" stroke-width="2"/><path d="M84 64l5 5" stroke="#5f6368" stroke-width="2" stroke-linecap="round"/>':''}</svg></div><div class="mu"><b>${nm[d]}</b> ${p==null?'--':p+'%'}<br>${Z(a[1],a[2])}</div></div>`},
+ card=c=>`<div class="card"><div class="row"><b>${c.n}</b><span class="tag hi">-${Math.round(c.lost)}</span><span class="tag">${nm[c.dim]}</span></div><div class="mu">${c.why}</div>
+ <div class="row"><button data-go="${c.tab}">${Z('Open','前往')}</button>${c.cd?`<button data-d="${c.id}">${Z('Mark done','標記完成')}</button>`:''}</div></div>`,
+ F=cur?low.filter(c=>c.dim===cur):low.slice(0,6),pa=cur&&PETS[cur][pi[cur]];
+ $('#p-score').innerHTML=`<div class="card"><div style="display:flex;justify-content:center">${big}</div><div class="pets" style="margin-top:6px">${Object.keys(PETS).map(pet).join('')}</div>
+ <div class="row"><button id="pChg" class="${pickPet?'on':''}">${Z('Change pets','換寵物')}</button><label><input type="checkbox" id="aM" ${alertMode?'checked':''}> ${Z('Typhoon warning active (demo switch)','颱風警報中（示範開關）')}</label></div>
+ ${pickPet?`<div>${Object.keys(PETS).map(d=>`<div class="row"><span class="mu" style="width:64px">${nm[d]}</span>${PETS[d].map((a,k)=>`<button data-pp="${d}:${k}" class="${pi[d]===k?'on':''}" title="${Z(a[1],a[2])}">${mini(a,'h')}</button>`).join('')}</div>`).join('')}<button id="pRnd">🎲 ${Z('Random','隨機')}</button></div>`:''}</div>
+ ${cur?`<div class="card"><div class="row">${mini(pa,mood(D[cur]?D[cur].pct:null))}<div><b>${Z(pa[1],pa[2])}</b><div class="mu">${line[mood(D[cur]?D[cur].pct:null)]}</div></div></div></div><b>🔍 ${Z('What it found','牠發現的事')}</b>`:`<b>${Z('What to do first','優先處理')}</b>`}
+ ${F.length?F.map(card).join(''):`<div class="card">${Z('Nothing to fix right now.','目前沒有需要處理的項目。')}</div>`}
  ${dd.length?`<div class="card"><b>${Z('Done','已完成')}</b>${dd.map(c=>`<div class="row"><span>✓ ${c.n}</span><button data-d="${c.id}">${Z('Undo','復原')}</button></div>`).join('')}</div>`:''}
  ${un.length?`<div class="card"><b>${Z('Waiting for data (not counted)','等待資料（不計分）')}</b>${un.map(c=>`<div class="mu">• ${c.n}: ${c.why}</div>`).join('')}</div>`:''}
- <div class="mu">${Z('A guide for what to act on, not a measurement. Weights are adjustable heuristics. Pest checks look at risk conditions only. Not a substitute for certified fire equipment.','此分數是行動提示，不是精確測量；權重為可調整的經驗規則；害蟲項目只看環境誘因；不能取代合格的消防設備。')}</div>`;
+ <div class="mu">${Z('Tap a pet to see what it found. A guide for what to act on, not a measurement. Weights are adjustable heuristics. Pest checks look at risk conditions only. Not a substitute for certified fire equipment.','點寵物看牠發現的事。此分數是行動提示，不是精確測量；權重為可調整的經驗規則；害蟲項目只看環境誘因；不能取代合格的消防設備。')}</div>`;
+ requestAnimationFrame(()=>requestAnimationFrame(()=>{document.querySelectorAll('#p-score .arc').forEach(a=>a.style.strokeDasharray=a.dataset.v+' 100')}));
+ Object.keys(D).forEach(k=>pv[k]=D[k]?D[k].pct:0);
+ if(patD){const e=document.querySelector(`.pet[data-pet="${patD}"] .pe`);if(e)e.classList.add('pat');patD=null}
+ document.querySelectorAll('#p-score [data-pet]').forEach(b=>b.onclick=()=>{sd=cur===b.dataset.pet?null:b.dataset.pet;patD=b.dataset.pet;pScore()});
+ $('#pChg').onclick=()=>{pickPet=!pickPet;pScore()};
+ document.querySelectorAll('#p-score [data-pp]').forEach(b=>b.onclick=()=>{const[d,k]=b.dataset.pp.split(':');pi[d]=+k;savePets();patD=d;pScore()});
+ const rn=$('#pRnd');if(rn)rn.onclick=()=>{Object.keys(PETS).forEach(d=>pi[d]=Math.floor(Math.random()*3));savePets();pScore()};
  $('#aM').onchange=e=>{alertMode=e.target.checked;pScore()};
  document.querySelectorAll('#p-score [data-go]').forEach(b=>b.onclick=()=>{if(b.dataset.go){tab=b.dataset.go;refresh()}});
  document.querySelectorAll('#p-score [data-d]').forEach(b=>b.onclick=()=>{done[b.dataset.d]=!done[b.dataset.d];pScore()})}
+/* ================= Devices: state, airflow coverage, energy checks ================= */
+function devUI(it){const d=it.dev,ac=it.type==='ac',fn=it.type==='fan',n=(k,l,st,lo,hi)=>`<label class="mu">${l}<input type="number" data-dv="${k}" step="${st}" min="${lo}" max="${hi}" value="${d[k]}" style="width:66px"></label>`,
+ sw=l=>`<label><input type="checkbox" data-dv="swing" ${d.swing?'checked':''}> ${l}</label>`;
+ return `<div class="mu" style="margin-top:6px"><b>${Z('Device','設備狀態')}</b></div><div class="row"><label><input type="checkbox" data-dv="on" ${d.on?'checked':''}> ${Z('On','開啟')}</label>${n('w',Z('Power W','功率 W'),10,0,5000)}${n('h',Z('Hours/day','每日小時'),.5,0,24)}</div>`+
+ (ac?`<div class="row">${n('set',Z('Set °C','設定 °C'),1,16,30)}${n('dir',Z('Aim ° (-60…60)','出風角度'),5,-60,60)}${sw(Z('Swing','擺風'))}</div>`:'')+
+ (fn?`<div class="row">${n('dir',Z('Aim ° (-180…180)','朝向角度'),15,-180,180)}${sw(Z('Oscillate','擺頭'))}</div>`:'')}
+function devWire(){document.querySelectorAll('#p-obj [data-dv]').forEach(e=>e.onchange=()=>{if(!sel||!sel.dev)return;const k=e.dataset.dv;sel.dev[k]=e.type==='checkbox'?e.checked:+e.value;sync(sel);refresh()})}
+/* which seats a device blows on: the item's front (+Z) turned by its aim, a 30° half-angle (60° when swinging), 6 m reach for AC, 4 m for a fan; tall furniture (1.2 m+) on the line blocks it */
+function cover(a){const d=a.dev,O=items.filter(i=>!isS(i.type)),seats=O.filter(i=>['chair','sofa','bed'].includes(i.type)),th=a.rot+d.dir*Math.PI/180,v={x:Math.sin(th),z:Math.cos(th)},half=(d.swing?60:30)*Math.PI/180,reach=a.type==='fan'?4:6;let c=0,b=0;
+ seats.forEach(t=>{const dx=t.x-a.x,dz=t.z-a.z,L=Math.hypot(dx,dz);if(L>reach||L<.1)return;if(Math.acos(Math.max(-1,Math.min(1,(dx*v.x+dz*v.z)/L)))>half)return;
+  [.1,.2,.3,.4,.5,.6,.7,.8,.9].some(k=>{const q={x:a.x+dx*k,z:a.z+dz*k};return O.some(o=>o!==t&&o!==a&&o.dim[1]>=1.2&&rectDist(q,o)<.05)})?b++:c++});return{n:seats.length,c,b,v,reach,half}}
+function devChecks(L){const W=of('window'),H=heats();
+ of('ac').filter(a=>a.dev.on).forEach(a=>{const d=a.dev,id=a.id,kwh=d.w*d.h/1000,dl=Math.max(0,26-d.set),sv=Math.min(.4,dl*cool.pct/100)*kwh,c=cover(a),dw=near(a,W),dh=near(a,H);
+  L('energy','acs'+id,`AC #${id} setpoint`,`冷氣 #${id} 設定溫度`,20,dl*4,Z(`Set to ${d.set} °C; 26 °C would save about ${r2(sv)} kWh/day (NT$ ${r1(sv*rate)})`,`設定 ${d.set} °C；調到 26 °C 每日約省 ${r2(sv)} 度（NT$ ${r1(sv*rate)}）`),'cool',0,1);
+  if(c.n)L('energy','acv'+id,`AC #${id} airflow aim`,`冷氣 #${id} 出風方向`,15,15*(c.n-c.c)/c.n,Z(`${c.c}/${c.n} seats are in the airflow${c.b?`, ${c.b} blocked by tall furniture`:''}`,`${c.c}/${c.n} 個座位在出風範圍內${c.b?`，${c.b} 個被高家具擋住`:''}`),'cool');
+  L('energy','acw'+id,`AC #${id} near heat`,`冷氣 #${id} 靠近熱源`,10,(dw!==null&&dw<1)||(dh!==null&&dh<1)?10:0,Z('Within 1 m of a window or heat source: its thermostat may read warm and run longer','離窗或熱源不到 1 m：感溫可能偏高而多運轉'),'cool')});
+ of('refrigerator').forEach(f=>{const dh=near(f,H),bad=dh!==null&&dh<.6;L('energy','fr'+f.id,`Fridge #${f.id} placement`,`冰箱 #${f.id} 位置`,10,bad?10:0,bad?Z(`Only ${r2(dh)} m from a heat source: it works harder`,`離熱源只有 ${r2(dh)} m：壓縮機會更費力`):Z('Away from heat sources','遠離熱源'),'cool')});
+ of('fan').filter(f=>f.dev.on).forEach(f=>{const c=cover(f);if(c.n)L('energy','fp'+f.id,`Fan #${f.id} aim`,`風扇 #${f.id} 朝向`,10,c.c?0:10,Z(`${c.c}/${c.n} seats within its airflow`,`${c.c}/${c.n} 個座位在風扇範圍內`),'cool')})}
+function devOv(){const V=(x,y,z)=>new THREE.Vector3(x,y,z),ln=(p,c)=>new THREE.Line(new THREE.BufferGeometry().setFromPoints(p),new THREE.LineBasicMaterial({color:c}));
+ items.filter(i=>(i.type==='ac'||i.type==='fan')&&i.dev).forEach(a=>{const c=cover(a),y=a.y-(a.type==='ac'?.4:0),col=a.dev.on?(a.type==='ac'?0x1a73e8:0x188038):0x9aa0a6,th=Math.atan2(c.v.x,c.v.z);
+  [-c.half,0,c.half].forEach(o=>ov.add(ln([V(a.x,y,a.z),V(a.x+Math.sin(th+o)*c.reach,y,a.z+Math.cos(th+o)*c.reach)],col)))});
+ const W=of('window');if(W.length>1){const b=xv();ov.add(ln([V(b.p.x,1.2,b.p.z),V(b.q.x,1.2,b.q.z)],0x0ea5e9));const t=new THREE.Mesh(new THREE.SphereGeometry(.07),new THREE.MeshBasicMaterial({color:0x0ea5e9}));t.position.set(b.q.x,1.2,b.q.z);ov.add(t)}}
+function xv(){const W=of('window');let b=null;W.forEach((p,i)=>W.slice(i+1).forEach((q,k)=>{const d=Math.hypot(p.x-q.x,p.z-q.z);if(!b||d>b.d)b={d,p,q,i:i+1,k:i+k+2}}));return b}
+function devCard(){const D=items.filter(i=>i.dev),Wn=of('window'),H=heats(),ac=of('ac').find(a=>a.dev.on)||of('ac')[0],fn=of('fan').find(a=>a.dev.on),e=i=>i.dev.on?i.dev.w*i.dev.h/1000:0,tot=D.reduce((s,i)=>s+e(i),0),N=[];
+ if(ac){const d=ac.dev,c=cover(ac),k=e(ac),dl=Math.max(0,26-d.set),dw=near(ac,Wn),dh=near(ac,H),
+  hit=Wn.map((w,i)=>{const dx=w.x-ac.x,dz=w.z-ac.z,al=dx*c.v.x+dz*c.v.z,pp=Math.abs(dx*c.v.z-dz*c.v.x);return al>0&&al<c.reach&&pp<.8?i+1:0}).filter(Boolean);
+  N.push(Z(`AC #${ac.id} is ${d.on?'on':'off'}, aimed ${d.dir}° from its front${d.swing?' (swinging)':''}: ${c.c}/${c.n} seats in the airflow${c.b?`, ${c.b} blocked`:''}.`,`冷氣 #${ac.id} ${d.on?'開啟':'關閉'}，出風偏離正面 ${d.dir}°${d.swing?'（擺風）':''}：${c.c}/${c.n} 個座位在出風範圍內${c.b?`，${c.b} 個被擋住`:''}。`));
+  if(hit.length)N.push(Z(`Its airflow points at window ${hit.join(', ')}: shade that glass first, or aim toward the seats.`,`出風正對第 ${hit.join('、')} 扇窗：先幫那面玻璃遮陽，或把出風轉向座位。`));
+  if((dw!==null&&dw<1)||(dh!==null&&dh<1))N.push(Z('The AC is within 1 m of a window or heat source; its thermostat may read warm.','冷氣離窗或熱源不到 1 m，感溫可能偏高。'));
+  if(d.on&&dl>0)N.push(Z(`Setpoint ${d.set} → 26 °C saves about ${r2(Math.min(.4,dl*cool.pct/100)*k)} kWh/day at ${cool.pct}%/°C.`,`設定 ${d.set} → 26 °C，以每 °C ${cool.pct}% 估算，每日約省 ${r2(Math.min(.4,dl*cool.pct/100)*k)} 度。`));
+  if(fn&&d.on){const net=k*Math.min(.4,cool.pct/100*cool.dT)-e(fn);N.push(Z(`Fan #${fn.id} plus a ${cool.dT} °C higher setpoint nets ${net>=0?'a saving':'an extra cost'} of about ${r2(Math.abs(net))} kWh/day.`,`風扇 #${fn.id} 加上設定調高 ${cool.dT} °C，淨${net>=0?'省':'多耗'}約 ${r2(Math.abs(net))} 度／日。`))}}
+ if(Wn.length>1){const b=xv();N.push(Z(`Windows ${b.i} and ${b.k} are ${r1(b.d)} m apart: open both when it is cooler outside than inside for a cross breeze (blue line in 3D).`,`第 ${b.i} 與第 ${b.k} 扇窗相距 ${r1(b.d)} m：室外比室內涼時同時開啟可形成對流（3D 藍線）。`))}
+ $('#p-cool').insertAdjacentHTML('beforeend',`<div class="card"><b>${Z('4. Your devices','4. 你的設備')}</b>`+(D.length?`<table class="ct"><tr><th></th><th>${Z('State','狀態')}</th><th>W</th><th>kWh/${Z('day','日')}</th><th></th></tr>${D.map(i=>`<tr><td>#${i.id} ${T[i.type][0]}</td><td>${i.dev.on?Z('On','開'):Z('Off','關')}</td><td>${i.dev.w}</td><td>${r2(e(i))}</td><td><button class="small" data-edit="${i.id}">${Z('Edit','編輯')}</button></td></tr>`).join('')}</table>
+ <div class="mu">${Z('Estimated total','估計合計')}: ${r2(tot)} kWh/${Z('day','日')} (NT$ ${r1(tot*rate)}). ${Z('Watts and hours are your own inputs; a smart plug can make them live.','功率與時數是你輸入的；日後可接智慧插座變成即時。')}</div>`:`<div class="mu">${Z('No devices yet. Scans find fridges, ovens, washers and TVs. Add air conditioners and fans in Objects (Add to room), then set on/off, power and aim.','尚無設備。掃描會辨識冰箱、烤箱、洗衣機與電視；冷氣與風扇請在「物件」分頁用「加入房間」新增，再設定開關、功率與出風方向。')}</div>`)+
+ (N.length?`<ul>${N.map(x=>`<li>${x}</li>`).join('')}</ul>`:'')+`<div class="mu">${Z('Coverage uses a 30° spread (60° swinging) and 6 m reach (fan 4 m). These are rules of thumb, not airflow simulation.','覆蓋範圍以 30°（擺風 60°）、6 m（風扇 4 m）估算，是經驗法則，不是氣流模擬。')}</div></div>`);
+ document.querySelectorAll('#p-cool [data-edit]').forEach(b=>b.onclick=()=>{sel=items.find(i=>i.id==b.dataset.edit);tab='obj';refresh()})}
 refresh();
 if(lang==='zh')setLang('zh');
 

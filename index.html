@@ -12,7 +12,13 @@ button,select,input{font:inherit;background:#fff;color:var(--tx);border:1px soli
 button{cursor:pointer}button.on{border-color:var(--bl);color:var(--bl);background:#e8f0fe}button.del{color:var(--rd)}
 main{flex:1;display:flex;min-height:0}#vp{flex:1;min-width:0;position:relative}#vp canvas{display:block}
 aside{width:340px;border-left:1px solid var(--bd);background:var(--pn);overflow:auto;padding:10px}
-.tabs{display:flex;gap:5px;margin-bottom:8px;flex-wrap:wrap}.tabs button{flex:1;padding:5px 6px;font-size:13px}table.ct{width:100%;border-collapse:collapse;font-size:12px}table.ct td,table.ct th{border-bottom:1px solid var(--bd);padding:3px 2px;text-align:right}table.ct td:first-child,table.ct th:first-child{text-align:left}
+.tabs{display:flex;gap:6px;margin-bottom:8px}.tabs button{flex:1 1 0;min-width:0;aspect-ratio:1;max-height:48px;padding:0;font-size:21px;line-height:1;display:flex;align-items:center;justify-content:center}
+#vp>.pop{position:absolute;z-index:6;background:#fff;border:1px solid var(--bd);border-radius:14px;box-shadow:0 4px 18px rgba(32,33,36,.25)}
+#obBtn{position:absolute;z-index:7;left:12px;top:12px;width:42px;height:42px;border-radius:50%;padding:0;font-size:20px;box-shadow:0 2px 8px rgba(32,33,36,.3)}
+#obPop{left:12px;top:62px;width:310px;max-height:calc(100% - 74px);overflow:auto;padding:0 10px 8px}#scPop{right:12px;top:12px;width:310px;max-height:calc(100% - 24px);overflow:auto;padding:0 10px 8px}
+.pophd{display:flex;align-items:center;gap:8px;padding:8px 0 4px}.pophd b{flex:1}.pophd button{padding:0 8px}#scInfo{cursor:help;color:var(--mu)}#scPop.min #p-score{display:none}
+.cicons{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}.ci{width:38px;height:38px;padding:0;border-radius:50%;font-size:18px;line-height:1;border-width:2px}.ci.hi{border-color:#d93025;background:#fde7e4}.ci.md{border-color:#e37400;background:#fff3e0}.ci.dn{border-color:#188038;background:#e6f4ea;opacity:.7}.ci.unk{border-style:dashed;opacity:.6}.ci.pick{box-shadow:0 0 0 3px #d2e3fc}
+aside.flash{animation:fl2 .8s}@keyframes fl2{0%{box-shadow:inset 0 0 0 3px #1a73e8}100%{box-shadow:inset 0 0 0 0 transparent}}table.ct{width:100%;border-collapse:collapse;font-size:12px}table.ct td,table.ct th{border-bottom:1px solid var(--bd);padding:3px 2px;text-align:right}table.ct td:first-child,table.ct th:first-child{text-align:left}
 .card{border:1px solid var(--bd);border-radius:8px;padding:8px 10px;margin:8px 0}
 .mu{color:var(--mu);font-size:12px}.row{display:flex;gap:6px;align-items:center;margin:4px 0;flex-wrap:wrap}
 .item{padding:3px 6px;border-radius:5px;cursor:pointer;transition:background .12s,box-shadow .12s}.item:hover{background:#f1f3f4}
@@ -28,14 +34,24 @@ canvas.sp{width:100%;height:46px;background:#f1f3f4;border-radius:6px;margin-top
 .pe{transform-box:fill-box;transform-origin:50% 100%}.pe.h,.pe.j{animation:bob 1.3s ease-in-out infinite}.pe.j{animation-duration:.8s}.pe.s{transform:translateY(3px) scaleY(.92)}.pe.a{animation:shk .25s linear infinite alternate}.pe.z{opacity:.6}.pe.pat{animation:pat .5s}
 .eye{transform-box:fill-box;transform-origin:center;animation:blink 4s infinite}
 @keyframes bob{50%{transform:translateY(-4px)}}@keyframes pat{50%{transform:scale(1.25)}}@keyframes shk{from{transform:rotate(-3deg)}to{transform:rotate(3deg)}}@keyframes blink{0%,94%,100%{transform:scaleY(1)}97%{transform:scaleY(.1)}}
+header{background:linear-gradient(90deg,#202124,#2b3a55)}aside{background:#f8fafc}
+.tabs button{color:var(--c);background:#fff;border-color:transparent;box-shadow:0 1px 3px rgba(32,33,36,.18);transition:.15s}.tabs button:hover{background:var(--bg)}.tabs button.on{color:var(--c);background:var(--bg);border-color:var(--c);box-shadow:inset 0 0 0 1px var(--c)}
+#p-air{--c:#0ea5e9}#p-energy{--c:#f59e0b}#p-cool{--c:#3b82f6}#p-inf{--c:#65a30d}#p-fire{--c:#ef4444}#p-ty{--c:#6366f1}#p-out{--c:#ca8a04}
+aside .card{border-left:4px solid var(--c,var(--bd));background:#fff}aside .card>b:first-child{color:var(--c)}
+#obBtn,#obBtn.on{color:#fff;border:none;background:linear-gradient(135deg,#1a73e8,#4f8cff)}#obBtn.on{background:#174ea6}#obBtn svg{display:block;margin:auto}
+#obPop .pophd,#scPop .pophd{margin:0 -10px 4px;padding:9px 12px;border-radius:14px 14px 0 0;background:linear-gradient(90deg,#e8f0fe,#e6f4ea)}
+#scPop{width:390px;max-width:calc(100% - 24px)}.pets{gap:6px}.pet{background:#f8fafc;border:1px solid #eef1f6}.pet.sel{background:#e8f0fe;border-color:#c6dafc}
+.pet[data-pet=safe] b{color:#2563eb}.pet[data-pet=energy] b{color:#d97706}.pet[data-pet=pest] b{color:#15803d}.ci svg{display:block;margin:auto}
 @media(max-width:800px){main{flex-direction:column}aside{width:100%;height:48%;border-left:0;border-top:1px solid var(--bd)}}
 </style></head><body>
 <header><h1>Home Guardian</h1><button id="bDemo">Load demo living room</button><button id="bFile">Import scan (.json)</button>
 <button id="bLang">中文</button><input type="file" id="fIn" accept=".json" hidden><span id="st" style="font-size:12px;opacity:.85">No scan loaded</span></header>
 <div id="banner"></div>
-<main><div id="vp"></div><aside>
-<div class="tabs"><button data-t="score">Score</button><button data-t="obj" class="on">Objects</button><button data-t="ty">Typhoon</button><button data-t="fire">Fire</button><button data-t="air">Air/Power</button><button data-t="cool">Cooling</button></div>
-<div id="p-score"></div><div id="p-obj" hidden></div><div id="p-ty" hidden></div><div id="p-fire" hidden></div><div id="p-air" hidden></div><div id="p-cool" hidden></div></aside></main>
+<main><div id="vp"><button id="obBtn" title="Objects"></button>
+<div class="pop" id="obPop" hidden><div class="pophd"><b>Objects</b><button id="obX">✕</button></div><div id="p-obj"></div></div>
+<div class="pop" id="scPop"><div class="pophd"><b>Home quality</b><b id="scPct" style="flex:0">--</b><span id="scInfo">ⓘ</span><button id="scMin" title="Minimize">–</button></div><div id="p-score"></div></div></div><aside>
+<div class="tabs"></div>
+<div id="p-air" hidden></div><div id="p-energy" hidden></div><div id="p-cool" hidden></div><div id="p-inf" hidden></div><div id="p-fire" hidden></div><div id="p-ty" hidden></div><div id="p-out" hidden></div></aside></main>
 <footer>Supplementary alerts only: this does not replace certified smoke or fire alarms. Thresholds are demo reference values. Scans and models stay on this device.</footer>
 
 <!-- Offline: replace these URLs with files bundled in the app (see notes). -->
@@ -46,6 +62,18 @@ import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 const $=s=>document.querySelector(s),r1=n=>n.toFixed(1),r2=n=>n.toFixed(2);
+const IC={air:'<path d="M3 8h11a3 3 0 1 0-3-3"/><path d="M3 12h16a3 3 0 1 1-3 3"/><path d="M3 16h7a2 2 0 1 1-2 2"/>',energy:'<path d="M13 2L4 14h7l-1 8 9-12h-7z"/>',
+cool:'<path d="M12 2v20M4.5 7l15 10M19.5 7l-15 10"/><path d="M9.5 3.5L12 6l2.5-2.5M9.5 20.5L12 18l2.5 2.5"/>',
+inf:'<ellipse cx="12" cy="14" rx="5" ry="6"/><circle cx="12" cy="6.5" r="2"/><path d="M12 8v12M7 12H3M17 12h4M7.5 17L4 19.5M16.5 17l3.5 2.5M9.5 5L8 3M14.5 5L16 3"/>',
+fire:'<path d="M12 2c1 4 5 6 5 11a5 5 0 0 1-10 0c0-2 1-3 2-4 0 2 1 3 2 3 0-4-1-6 1-10z"/>',
+ty:'<circle cx="12" cy="12" r="1.5"/><path d="M12 10.5C12 6 15 4 19 5M13.5 12c4.5 0 6.5 3 5.5 7M12 13.5C12 18 9 20 5 19M10.5 12C6 12 4 9 5 5"/>',
+out:'<path d="M9 2v5M15 2v5M6 7h12v4a6 6 0 0 1-12 0zM12 17v5"/>',
+obj:'<path d="M4 11V8a3 3 0 0 1 3-3h10a3 3 0 0 1 3 3v3"/><path d="M2 13a2 2 0 0 1 4 0v2h12v-2a2 2 0 0 1 4 0v5H2z"/><path d="M5 18v2M19 18v2"/>',
+dice:'<rect x="3" y="3" width="18" height="18" rx="4"/><g fill="currentColor" stroke="none"><circle cx="8" cy="8" r="1.3"/><circle cx="16" cy="8" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="8" cy="16" r="1.3"/><circle cx="16" cy="16" r="1.3"/></g>',
+temp:'<path d="M14 14.8V5a2 2 0 0 0-4 0v9.8a4 4 0 1 0 4 0z"/>',hum:'<path d="M12 2.5C8 8 5.5 11 5.5 14.5a6.5 6.5 0 0 0 13 0C18.5 11 16 8 12 2.5z"/>',
+warn:'<path d="M12 3L2 21h20z"/><path d="M12 10v5M12 18v.5"/>',bell:'<path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4z"/><path d="M10 21h4"/>'},
+TCOL={air:['#0ea5e9','#e0f2fe'],energy:['#f59e0b','#fef3c7'],cool:['#3b82f6','#dbeafe'],inf:['#65a30d','#ecfccb'],fire:['#ef4444','#fee2e2'],ty:['#6366f1','#e0e7ff'],out:['#ca8a04','#fef9c3']},
+svg=(k,z)=>`<svg viewBox="0 0 24 24" width="${z}" height="${z}" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${IC[k]||''}</svg>`;
 
 /* ---- Types. All sizes are real meters. kind: s = wall-mounted surface, o = free-standing object ---- */
 const T={wall:['Wall','#94a3b8','s'],door:['Door','#b45309','s'],window:['Window','#38bdf8','s'],opening:['Opening','#64748b','s'],
@@ -70,7 +98,7 @@ const size=()=>{const w=vp.clientWidth,h=vp.clientHeight;rd.setSize(w,h);cam.asp
 addEventListener('resize',size);size();(function loop(){requestAnimationFrame(loop);ct.update();rd.render(sc,cam)})();
 
 /* ---- State ---- */
-let items=[],uid=1,sel=null,tab='score',sensor=null,pick=false,room={ceil:2.5,ext:6};
+let items=[],uid=1,sel=null,tab='air',sensor=null,pick=false,room={ceil:2.5,ext:6};
 /* ---- Detailed models: per-type parts built from primitives (bottom-anchored, meters), procedural wood/fabric/metal textures,
    plus optional real .glb models per type (same logic as the original site). ---- */
 const MODEL_URLS={/* sofa:'models/sofa.glb', chair:'models/chair.glb', bed:'models/bed.glb', table:'models/table.glb', refrigerator:'models/fridge.glb' */};
@@ -204,7 +232,7 @@ function recSensor(){sensor=null;const ws=of('wall'),W=of('window'),D=of('door')
  if(best)sensor={...best,y:Math.min(1.5,room.ceil-.5)}}
 
 /* ---- Overlays ---- */
-function drawOv(){ov.clear();if(tab==='cool')coolOv();
+function drawOv(){ov.clear();if(tab==='cool')coolOv();if(tab==='inf')infOv();if(tab==='out')outOv();
  if(tab==='ty')of('window').forEach(w=>{const a=w.dim[0]/2,b=w.dim[1]/2;/* diagonals + cross = the taping pattern described in the panel */
   const pts=[[-a,-b],[a,b],[-a,b],[a,-b],[0,-b],[0,b],[-a,0],[a,0]].map(([x,y])=>new THREE.Vector3(x,y,.05));
   const l=new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(pts),new THREE.LineBasicMaterial({color:0x7c2d12}));
@@ -219,13 +247,21 @@ rd.domElement.onpointerup=e=>{if(!dn||Math.hypot(e.clientX-dn[0],e.clientY-dn[1]
  const b=rd.domElement.getBoundingClientRect();ray.setFromCamera(new THREE.Vector2((e.clientX-b.left)/b.width*2-1,-(e.clientY-b.top)/b.height*2+1),cam);
  if(pick){const p=new THREE.Vector3();if(ray.ray.intersectPlane(fl,p)){sensor={...(sensor||{}),x:p.x,z:p.z,y:Math.min(1.5,room.ceil-.5),
   dW:near(p,of('window')),dD:near(p,of('door')),dH:near(p,heats()),relaxed:false,manual:true};pick=false;refresh()}return}
- const h=ray.intersectObjects(world.children,true).find(x=>x.object.isMesh);let o=h&&h.object;while(o&&!o.userData.it)o=o.parent;sel=o?o.userData.it:null;refresh();document.querySelector('#p-obj .item.sel')?.scrollIntoView({block:'nearest'})};
+ const h=ray.intersectObjects(world.children,true).find(x=>x.object.isMesh);let o=h&&h.object;while(o&&!o.userData.it)o=o.parent;sel=o?o.userData.it:null;if(sel)openObj();refresh();document.querySelector('#p-obj .item.sel')?.scrollIntoView({block:'nearest'})};
 
 /* ---- Panels ---- */
-document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{tab=b.dataset.t;refresh()});
-function refresh(){document.querySelectorAll('.tabs button').forEach(b=>b.classList.toggle('on',b.dataset.t===tab));if(tab!=='obj')pObj();
- for(const k of['score','obj','ty','fire','air','cool'])$('#p-'+k).hidden=k!==tab;items.forEach(paint);
- ({score:pScore,obj:pObj,ty:pTy,fire:pFire,air:pAir,cool:pCool})[tab]();drawOv()}
+const TABS=[['air','air','Air','空氣'],['energy','energy','Energy','節能'],['cool','cool','Cooling','降溫'],['inf','inf','Infestation','病蟲害'],['fire','fire','Fire','失火'],['ty','ty','Typhoon','颱風'],['out','out','Power outage','停電準備']];
+$('.tabs').innerHTML=TABS.map(t=>`<button data-t="${t[0]}" aria-label="${t[2]}" style="--c:${TCOL[t[0]][0]};--bg:${TCOL[t[0]][1]}">${svg(t[0],22)}</button>`).join('');
+$('#obBtn').innerHTML=svg('obj',22);
+const openObj=()=>{$('#obPop').hidden=false;$('#obBtn').classList.add('on')};
+function go(t){if(t==='obj'){openObj();return}if(!t)return;tab=t;refresh();const a=$('aside');a.scrollTop=0;a.classList.remove('flash');void a.offsetWidth;a.classList.add('flash')}
+document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>go(b.dataset.t));
+$('#obBtn').onclick=()=>{const h=!$('#obPop').hidden;$('#obPop').hidden=h;$('#obBtn').classList.toggle('on',!h)};
+$('#obX').onclick=()=>{$('#obPop').hidden=true;$('#obBtn').classList.remove('on')};
+$('#scMin').onclick=()=>{const m=$('#scPop').classList.toggle('min');$('#scMin').textContent=m?'+':'–'};
+function refresh(){document.querySelectorAll('.tabs button').forEach(b=>{b.classList.toggle('on',b.dataset.t===tab);const t=TABS.find(x=>x[0]===b.dataset.t);b.title=Z(t[2],t[3])});pObj();
+ for(const t of TABS)$('#p-'+t[0]).hidden=t[0]!==tab;items.forEach(paint);
+ ({air:pAir,energy:pAir,cool:pCool,inf:pInf,fire:pFire,ty:pTy,out:pOut})[tab]();pScore();drawOv()}
 function pObj(){const opts=s=>Object.keys(T).map(k=>`<option value="${k}" ${k===s?'selected':''}>${T[k][0]}</option>`).join('');
  $('#p-obj').innerHTML=`<div class="mu">Types come from the scan. If one is wrong, select it (tap it in 3D or in the list) and change it. Sizes are in meters.</div>`+
  (sel?`<div class="card"><b>#${sel.id} ${T[sel.type][0]}</b> <span class="tag">${sel.auto?'from scan':'edited'}</span>
@@ -304,10 +340,10 @@ function evalNow(){const r=hist[hist.length-1];if(!r)return;const old=hist.find(
    else if(!lastPush[k]||now-lastPush[k]>600000){push('Home Guardian notice',m,2,'information_source');lastPush[k]=now}}});
  if(!ks.length&&Object.keys(act).length){evts.unshift(`${new Date().toLocaleTimeString()} Back to normal`);push('Home Guardian','All issues cleared.',2,'white_check_mark')}
  evts=evts.slice(0,8);act=cur;const lv=ks.length?Math.max(...ks.map(k=>cur[k][0])):0;lastLv=lv;
- alarm(lv===2);banner(lv,ks.sort((x,y)=>cur[y][0]-cur[x][0]).map(k=>cur[k][1]).join('  |  '));paintVals();paintAir();if(tab==='score')pScore();drawOv()}
+ alarm(lv===2);banner(lv,ks.sort((x,y)=>cur[y][0]-cur[x][0]).map(k=>cur[k][1]).join('  |  '));paintVals();paintAir();pScore();drawOv()}
 function banner(lv,msg){const b=$('#banner');b.className=lv?'l'+lv:'';b.textContent=lv?msg:''}
 setInterval(()=>{if(lastSeen&&Date.now()-lastSeen>20000){banner(3,'⚠ Air box offline for over 20 s: nothing is being monitored. Check power and network.');alarm(false);
- if(!offSent){offSent=true;window.notify?.(3,tr('Air box offline'));push('Home Guardian','Air box offline for over 20 s. Nothing is being monitored.',4,'warning')}paintVals();paintAir();if(tab==='score')pScore();drawOv()}},2000);
+ if(!offSent){offSent=true;window.notify?.(3,tr('Air box offline'));push('Home Guardian','Air box offline for over 20 s. Nothing is being monitored.',4,'warning')}paintVals();paintAir();pScore();drawOv()}},2000);
 function spark(id,k,lo,hi,c){const cv=$(id);if(!cv)return;const g=cv.getContext('2d');g.clearRect(0,0,300,46);const pt=hist.filter(p=>!isNaN(p[k]));if(pt.length<2)return;
  g.strokeStyle=c;g.lineWidth=1.5;g.beginPath();pt.forEach((p,i)=>{const x=i/(pt.length-1)*300,y=44-(Math.min(Math.max(p[k],lo),hi)-lo)/(hi-lo)*42;i?g.lineTo(x,y):g.moveTo(x,y)});g.stroke()}
 const stat=()=>!lastSeen?'No data yet':Date.now()-lastSeen>20000?'Offline':['Normal','Notice','ALERT'][lastLv];
@@ -319,9 +355,9 @@ function fireLive(){$('#p-fire').insertAdjacentHTML('beforeend',`<div class="car
  <div class="mu">Publish JSON like {"temp":26.5,"co2":650,"hum":55,"pm25":12,"power":320} (pm25 and power are optional). The public test broker is for demos only; do not send sensitive data.</div>
  <div class="row"><span class="mu">Or simulate:</span><select class="sSc">${SIMOPT}</select></div></div>
  <div class="card"><b>Phone push (ntfy)</b><div class="row"><input id="nTop" style="flex:1" value="${ntopic()}"><button id="bNt">Test push</button></div>
- <div class="row"><label><input type="checkbox" id="aOn" ${alarmOn?'checked':''}> 🔔 Local alarm sound</label></div>
+ <div class="row"><label><input type="checkbox" id="aOn" ${alarmOn?'checked':''}> ${svg('bell',16)} Local alarm sound</label></div>
  <div class="mu" id="nSt">Install the ntfy app and subscribe to this topic. Treat the topic name like a password. Only alert text is sent, never the model or raw data.</div></div>
- <div class="card"><div class="vals"><div>🌡<b id="vT">--</b>°C</div><div>💨<b id="vC">--</b>ppm</div><div>💧<b id="vH">--</b>%</div></div>
+ <div class="card"><div class="vals"><div>${svg('temp',18)} <b id="vT">--</b>°C</div><div>${svg('air',18)} <b id="vC">--</b>ppm</div><div>${svg('hum',18)} <b id="vH">--</b>%</div></div>
  <canvas class="sp" id="spT" width="300" height="46"></canvas><canvas class="sp" id="spC" width="300" height="46"></canvas><div class="mu">Status: <span id="stx"></span></div></div>
  <div class="card"><b>Events</b><div class="mu" id="evl">No events yet</div></div>
  <div class="mu">Thresholds (demo values): CO₂ ≥1000 ppm notice, ≥2000 ppm alert (usually poor ventilation, not fire). Temperature ≥40 °C notice; ≥57 °C, a rise of ≥8 °C in 1 min, or ≥45 °C with CO₂ climbing fast counts as possible fire. Humidity ≥75% notice. No data for 20 s means offline. Red alerts sound the alarm and push to your phone; notices push quietly, at most once per 10 minutes per type.</div>`);
@@ -329,12 +365,10 @@ function fireLive(){$('#p-fire').insertAdjacentHTML('beforeend',`<div class="car
  $('#bNt').onclick=()=>{unlock();push('Home Guardian test','This is a test notification.',3,'white_check_mark')};
  $('#nTop').onchange=e=>{try{localStorage.setItem('hgTopic',e.target.value.trim())}catch{}};$('#aOn').onchange=e=>{alarmOn=e.target.checked;unlock()};wireSim();paintVals()}
 const pmLv=p=>p<15.5?'Good':p<35.5?'Moderate':p<54.5?'Unhealthy for sensitive groups':p<150.5?'Unhealthy':'Very unhealthy';
-function pAir(){$('#p-air').innerHTML=`<div class="card"><b>Indoor air (PM2.5)</b><div class="vals" style="grid-template-columns:1fr 1fr"><div><b id="vP">--</b>µg/m³</div><div><b id="vPl" style="font-size:14px">--</b>level</div></div><canvas class="sp" id="spP" width="300" height="46"></canvas>
- <div class="mu">Levels follow Taiwan's PM2.5 air quality index: &lt;15.5 good, &lt;35.5 moderate, &lt;54.5 unhealthy for sensitive groups, &lt;150.5 unhealthy. At 35.5 or more you get a notice to close windows and run a purifier.</div></div>
- <div class="card"><b>Power use</b><div class="vals"><div><b id="vW">--</b>W</div><div><b id="vK">--</b>kWh</div><div><b id="vM">--</b>NT$</div></div><canvas class="sp" id="spW" width="300" height="46"></canvas>
+function pAir(){const A=`<div class="card"><b>Indoor air (PM2.5)</b><div class="vals" style="grid-template-columns:1fr 1fr"><div><b id="vP">--</b>µg/m³</div><div><b id="vPl" style="font-size:14px">--</b>level</div></div><canvas class="sp" id="spP" width="300" height="46"></canvas>
+ <div class="mu">Levels follow Taiwan's PM2.5 air quality index: &lt;15.5 good, &lt;35.5 moderate, &lt;54.5 unhealthy for sensitive groups, &lt;150.5 unhealthy. At 35.5 or more you get a notice to close windows and run a purifier.</div></div>`,E=`<div class="card"><b>Power use</b><div class="vals"><div><b id="vW">--</b>W</div><div><b id="vK">--</b>kWh</div><div><b id="vM">--</b>NT$</div></div><canvas class="sp" id="spW" width="300" height="46"></canvas>
  <div class="row"><span class="mu">Price (NT$/kWh)</span><input id="rIn" type="number" step="0.1" value="${rate}" style="width:70px"><button id="kRs">Reset total</button></div>
- <div class="mu">The total is integrated from power readings since you connected. Cost is a rough estimate (Taiwan uses tiered rates). At 1500 W or more you get a notice: a typical 110 V / 15 A outlet circuit tops out near 1650 W.</div></div>
- <div class="card"><div class="row"><span class="mu">Simulate:</span><select class="sSc">${SIMOPT}</select></div><div class="mu">Data comes from the air box and a smart plug over MQTT (fields pm25 and power). Set up the connection in the Fire tab.</div></div>`;
+ <div class="mu">The total is integrated from power readings since you connected. Cost is a rough estimate (Taiwan uses tiered rates). At 1500 W or more you get a notice: a typical 110 V / 15 A outlet circuit tops out near 1650 W.</div></div>`,S=`<div class="card"><div class="row"><span class="mu">Simulate:</span><select class="sSc">${SIMOPT}</select></div><div class="mu">Data comes from the air box and a smart plug over MQTT (fields pm25 and power). Set up the connection in the Fire tab.</div></div>`;$('#p-air').innerHTML=A+S;$('#p-energy').innerHTML=E+S;
  wireSim();$('#rIn').onchange=e=>{rate=+e.target.value||0;paintAir()};$('#kRs').onclick=()=>{kwh=0;paintAir()};paintAir()}
 function paintAir(){if(!$('#vP'))return;const r=hist[hist.length-1]||{},f=(v,n)=>v==null||isNaN(v)?'--':v.toFixed(n);
  $('#vP').textContent=f(r.P,0);$('#vPl').textContent=r.P==null||isNaN(r.P)?'--':pmLv(r.P);$('#vW').textContent=f(r.W,0);$('#vK').textContent=f(kwh,3);$('#vM').textContent=f(kwh*rate,2);
@@ -379,6 +413,7 @@ Fireplace=>壁爐
 Stairs=>樓梯
 Heater=>電暖器
 Other=>其他
+Home quality=>居家環境品質
 Air conditioner=>冷氣
 Fan=>風扇
 Types come from the scan. If one is wrong, select it (tap it in 3D or in the list) and change it. Sizes are in meters.=>類型來自掃描結果。若辨識錯誤，請選取它（點 3D 物件或清單）後修改。尺寸單位為公尺。
@@ -445,7 +480,7 @@ Pollution (PM2.5 rising)=>空污（PM2.5 上升）
 Power overload=>用電過載
 Phone push (ntfy)=>手機推播 (ntfy)
 Test push=>測試推播
-🔔 Local alarm sound=>🔔 本機警報聲
+Local alarm sound=>本機警報聲
 Install the ntfy app and subscribe to this topic. Treat the topic name like a password. Only alert text is sent, never the model or raw data.=>請安裝 ntfy App 並訂閱此主題。主題名稱等同密碼。只會送出警報文字，不含模型或原始數據。
 Sent =>已送出 
 Push failed (check network)=>推播失敗（請檢查網路）
@@ -562,7 +597,7 @@ function pCool(){placeCool();const W=of('window');
  <li>${Z('AC on the wall (blue) at','冷氣裝在牆面（藍色），離地')} ${r1(ac.y)} m, ${Z('blowing into the room','朝室內吹')}.</li>
  <li>${Z('Distance to seats','到座位的距離')}: ${Z('average','平均')} ${r1(ac.mean)} m, ${Z('farthest','最遠')} ${r1(ac.mx)} m (${ac.n} ${Z('seats','個座位')}).</li>
  <li>${ac.bl?`${ac.bl}/${ac.n} ${Z('seats have a tall item in the airflow path.','個座位的氣流路徑被高家具擋住。')}`:Z('No tall item blocks the airflow path to any seat.','氣流路徑沒有被高家具遮擋。')}</li>
- ${ac.mx>6?`<li>⚠ ${Z('Farthest seat is over 6 m away: one wall unit may not cool enough. Consider zoning.','最遠座位超過 6 m：單台壁掛式冷氣可能冷房能力不足，建議評估分區配置。')}</li>`:''}
+ ${ac.mx>6?`<li>${svg('warn',14)} ${Z('Farthest seat is over 6 m away: one wall unit may not cool enough. Consider zoning.','最遠座位超過 6 m：單台壁掛式冷氣可能冷房能力不足，建議評估分區配置。')}</li>`:''}
  ${fn?`<li>${Z('Fan (green) near the far seats; keep the ring (0.5 m) clear for chairs and walking. Low-to-medium speed, oscillating, avoid blowing straight at people.','風扇（綠色）放在遠端座位附近；圓環（0.5 m）內請保持淨空以免擋住椅子與走道。低至中風速、擺頭，避免長時間直吹人體。')}</li>`:`<li>${Z('No free floor spot found for a fan.','找不到適合放風扇的空地。')}</li>`}</ul>`:`<div class="mu">${Z('Add chairs, sofas or beds (Objects tab) to check airflow paths.','請在「物件」分頁加入椅子、沙發或床，才能檢查氣流路徑。')}</div>`}</div>
  <div class="mu">${Z('Prototype scope: window solar gain and AC/fan geometry are in. Not yet: zoned heat-load model, measured hourly weather, real equipment data.','原型範圍：已含窗戶日射得熱與冷氣／風扇幾何檢查。尚未含：熱負荷分區模型、實際逐時氣象、設備性能資料。')}</div>`;
  $('#cOpt').onchange=e=>{cool.opt=e.target.value;cool.shgc=OPTS[cool.opt][2];cool.vlt=OPTS[cool.opt][3];pCool()};
@@ -579,7 +614,7 @@ function checks(){const C=[],L=(dim,id,en,zh,max,lost,why,tab,st,cd)=>C.push({di
   const nb=O.filter(o=>!HEAT.includes(o.type)&&W.some(w=>rectDist(w,o)<1.5)).length;
   L('safe','nw','Typhoon: items near glass','颱風：窗邊物品',5,nb*2*k,Z(`${nb} item(s) within 1.5 m of a window`,`${nb} 件物品在窗邊 1.5 m 內`),'ty',0,1)}
  let hp=0;H.forEach(h=>O.filter(f=>FLAM.includes(f.type)).forEach(f=>{if(rectDist(h,f)-Math.max(h.dim[0],h.dim[2])/2<1)hp++}));
- if(H.length)L('safe','hc','Fire: heat source near furniture','火災：熱源靠近家具',20,hp*8,Z(`${hp} heat-source/furniture pair(s) closer than 1 m (flammables inferred from furniture type)`,`${hp} 組熱源與家具距離不到 1 m（易燃物由家具類型推測）`),'obj',0,1);
+ if(H.length)L('safe','hc','Fire: heat source near furniture','火災：熱源靠近家具',20,hp*8,Z(`${hp} heat-source/furniture pair(s) closer than 1 m (flammables inferred from furniture type)`,`${hp} 組熱源與家具距離不到 1 m（易燃物由家具類型推測）`),'fire',0,1);
  L('safe','box','Air box online','空氣盒連線',20,has&&!live?10:0,has?(live?Z('Online','連線中'):Z('Offline: nothing is being monitored','離線：目前沒有監測')):Z('No data yet: connect it in the Fire tab','尚無資料：請在「失火」分頁連線'),'fire',has?0:'unk');
  let x=0;if(has){if(act.fire)x+=25;if(act.co2)x+=act.co2[0]===2?15:5;if(r.P>=54.5)x+=12;else if(r.P>=35.5)x+=6;if(act.temp)x+=5;if(act.pwr)x+=8}
  L('safe','live','Live fire and air quality','即時火災與空氣品質',25,x,has?Z(x?'Active alerts: see the banner':'No active alerts','有警示：請看上方警示條'.replace('有警示：請看上方警示條',x?'有警示：請看上方警示條':'目前沒有警示')):Z('No sensor data','沒有感測資料'),'fire',has?0:'unk');
@@ -587,14 +622,14 @@ function checks(){const C=[],L=(dim,id,en,zh,max,lost,why,tab,st,cd)=>C.push({di
  L('energy','sh','West-sun shading','西曬遮陽',60,f(pa),Z(`Best shading could save about ${r2(pa)} kWh/day (NT$ ${r1(pa*rate)})`,`最佳遮陽每日約可省 ${r2(pa)} 度（NT$ ${r1(pa*rate)}）`),'cool');
  L('energy','fan','Fan + higher setpoint','風扇＋調高設定溫度',20,f(pb),Z(`Net saving about ${r2(pb)} kWh/day after the fan's own power. Tick done if you already do this`,`扣掉風扇耗電後每日約省 ${r2(pb)} 度；若已在做請標記完成`),'cool',0,1);
  placeCool();if(cool.ac&&!of('ac').length)L('energy','af','AC airflow path','冷氣氣流路徑',10,10*cool.ac.bl/cool.ac.n,Z(`${cool.ac.bl}/${cool.ac.n} seats blocked by tall furniture`,`${cool.ac.bl}/${cool.ac.n} 個座位被高家具擋住`),'cool');
- devChecks(L);L('energy','pw','Live power draw','即時用電',10,r.W>=1500?10:0,has?Z(r.W>=1500?'Near the outlet circuit limit':'Within normal range','已接近插座迴路上限'.replace('已接近插座迴路上限',r.W>=1500?'已接近插座迴路上限':'在正常範圍')):Z('No power data','沒有用電資料'),'air',has?0:'unk');
+ devChecks(L);L('energy','pw','Live power draw','即時用電',10,r.W>=1500?10:0,has?Z(r.W>=1500?'Near the outlet circuit limit':'Within normal range','已接近插座迴路上限'.replace('已接近插座迴路上限',r.W>=1500?'已接近插座迴路上限':'在正常範圍')):Z('No power data','沒有用電資料'),'energy',has?0:'unk');
  if(ws.length){let g=0;O.filter(o=>o.dim[1]>=.5).forEach(o=>{const c=Math.cos(o.rot),s=Math.sin(o.rot),hx=o.dim[0]/2,hz=o.dim[2]/2;
    [[hx+.01,0],[-hx-.01,0],[0,hz+.01],[0,-hz-.01]].forEach(([lx,lz])=>{const d=near({x:o.x+lx*c+lz*s,z:o.z-lx*s+lz*c},ws);if(d>.03&&d<.25)g++})});
-  L('pest','gap','Narrow gaps by furniture','家具旁狹縫',30,g*6,Z(`${g} gap(s) of 3-25 cm between furniture and walls: dark, hard to clean`,`${g} 處家具與牆之間有 3–25 公分縫隙：陰暗、不易清潔`),'obj',0,1)}
+  L('pest','gap','Narrow gaps by furniture','家具旁狹縫',30,g*6,Z(`${g} gap(s) of 3-25 cm between furniture and walls: dark, hard to clean`,`${g} 處家具與牆之間有 3–25 公分縫隙：陰暗、不易清潔`),'inf',0,1)}
  const kt=O.filter(o=>KIT.includes(o.type)),en=of('door').concat(of('opening')),ke=kt.filter(o=>en.some(e=>rectDist(o,e)<2)).length;
- if(kt.length)L('pest','ent','Food area near an entrance','廚房區靠近出入口',8,ke?8:0,Z(`${ke} kitchen item(s) within 2 m of a door or opening`,`${ke} 件廚房設備離門／開口不到 2 m`),'obj',0,1);
- L('pest','hum','Humidity','濕度',15,r.H>=75?15:0,has?Z(r.H>=75?'Damp air attracts pests and mold':'Humidity is fine','濕氣容易吸引害蟲與黴菌'.replace('濕氣容易吸引害蟲與黴菌',r.H>=75?'濕氣容易吸引害蟲與黴菌':'濕度正常')):Z('No humidity data','沒有濕度資料'),'fire',has?0:'unk');
- L('pest','ps','Pest sensor','害蟲感測器',0,0,Z('None connected: this score shows risk conditions, not detection','尚未連接：此分數只反映環境誘因，並非偵測'),'','unk');
+ if(kt.length)L('pest','ent','Food area near an entrance','廚房區靠近出入口',8,ke?8:0,Z(`${ke} kitchen item(s) within 2 m of a door or opening`,`${ke} 件廚房設備離門／開口不到 2 m`),'inf',0,1);
+ L('pest','hum','Humidity','濕度',15,r.H>=75?15:0,has?Z(r.H>=75?'Damp air attracts pests and mold':'Humidity is fine','濕氣容易吸引害蟲與黴菌'.replace('濕氣容易吸引害蟲與黴菌',r.H>=75?'濕氣容易吸引害蟲與黴菌':'濕度正常')):Z('No humidity data','沒有濕度資料'),'inf',has?0:'unk');
+ outCheck(L);L('pest','ps','Pest sensor','害蟲感測器',0,0,Z('None connected: this score shows risk conditions, not detection','尚未連接：此分數只反映環境誘因，並非偵測'),'inf','unk');
  return C}
 function dimScore(d,C){const a=C.filter(c=>c.dim===d&&c.st!=='unk'&&c.max>0),p=a.reduce((s,c)=>s+c.max,0);return p?{pct:Math.round(100*(1-a.reduce((s,c)=>s+c.lost,0)/p)),n:a.length,tot:C.filter(c=>c.dim===d&&c.max>0).length}:null}
 /* ---- Pets: one per area. The arc is the area's score (stretches like a Pokemon GO CP arc); the mood follows the score.
@@ -613,31 +648,33 @@ function face(m,dy){const c=43+(dy||0),k='#1f2937',e=(x,r)=>`<circle class="eye"
  z:`<path ${l} d="M38 ${c-3}h6M52 ${c-3}h6M44 ${c+8}h8"/><text x="66" y="${c-12}" font-size="10" fill="#5f6368" stroke="none">z</text>`}[m]}
 const petBody=(a,m)=>`<g class="pe ${m}" fill="${a[3]}" stroke="${a[3]}" stroke-linejoin="round" stroke-width="0">${SH[a[0]]}${face(m,DY[a[0]])}</g>`,
  mini=(a,m)=>`<svg viewBox="20 14 56 56" width="30" height="30">${petBody(a,m)}</svg>`;
-let pi={},sd,pickPet=false,pv={},patD=null,lastSig='';
+let selC=null,pi={},sd,pickPet=false,pv={},patD=null,lastSig='';
 try{pi=JSON.parse(localStorage.getItem('hgPets'))||{}}catch{}
 Object.keys(PETS).forEach(d=>{if(!(pi[d]>=0&&pi[d]<3))pi[d]=Math.floor(Math.random()*3)});
 const savePets=()=>{try{localStorage.setItem('hgPets',JSON.stringify(pi))}catch{}};
-function pScore(){if(!items.length){$('#p-score').innerHTML=`<div class="card">${Z('Load a scan or the demo room to see your score.','請先匯入掃描或載入範例房間，才會顯示分數。')}</div>`;lastSig='';return}
+function pScore(){if(!items.length){$('#scPct').textContent='--';$('#p-score').innerHTML=`<div class="card">${Z('Load a scan or the demo room to see your score.','請先匯入掃描或載入範例房間，才會顯示分數。')}</div>`;lastSig='';return}
  const C=checks(),D={safe:dimScore('safe',C),energy:dimScore('energy',C),pest:dimScore('pest',C)},av=Object.values(D).filter(Boolean).map(d=>d.pct),all=av.length?Math.min(...av):null,nm=DN(),
  col=p=>p==null?'#9aa0a6':p>=80?'#188038':p>=60?'#e37400':'#d93025',mood=p=>p==null?'z':p>=90?'j':p>=80?'h':p>=60?'o':p>=40?'s':'a',
  low=C.filter(c=>c.lost>0).sort((a,b)=>b.lost-a.lost),dd=C.filter(c=>done[c.id]),un=C.filter(c=>c.st==='unk'),
  worst=Object.keys(D).filter(k=>D[k]&&D[k].pct<60).sort((a,b)=>D[a].pct-D[b].pct)[0]||null,cur=sd===undefined?worst:sd,
  line={j:Z('Everything is great!','太棒了，一切順利！'),a:Z('Something is really wrong!','情況不妙，需要立刻處理！'),h:Z('All good here!','這裡一切都好！'),o:Z('A few things could be better.','有幾件事可以更好。'),s:Z("I'm worried… let me check the details.",'我有點擔心…我去檢查細項。'),z:Z('Zzz… waiting for data.','呼呼…等待資料。')},
- sg=JSON.stringify([D,cur,pickPet,alertMode,lang,pi,C.map(c=>[c.id,c.lost,c.why,!!done[c.id]])]);
+ sg=JSON.stringify([D,cur,selC,pickPet,alertMode,lang,pi,C.map(c=>[c.id,c.lost,c.why,!!done[c.id]])]);
  if(sg===lastSig&&$('#p-score').firstChild)return;lastSig=sg;/* skip identical re-renders so animations are not restarted every second */
  const z=110,r=z/2-8,cf=2*Math.PI*r,big=`<div style="text-align:center"><svg width="${z}" height="${z}"><circle cx="${z/2}" cy="${z/2}" r="${r}" fill="none" stroke="#e8eaed" stroke-width="8"/><circle cx="${z/2}" cy="${z/2}" r="${r}" fill="none" stroke="${col(all)}" stroke-width="8" stroke-linecap="round" stroke-dasharray="${all==null?0:all/100*cf} ${cf}" transform="rotate(-90 ${z/2} ${z/2})"/><text x="50%" y="56%" text-anchor="middle" font-size="26" font-weight="700" fill="${col(all)}">${all==null?'--':all+'%'}</text></svg><div class="mu"><b>${Z('Home quality','居家環境品質')}</b><br>${Z('lowest area sets the score','取最低的面向')}</div></div>`,
  pet=d=>{const p=D[d]?D[d].pct:null,m=mood(p),a=PETS[d][pi[d]];return `<div class="pet ${cur===d?'sel':''}" data-pet="${d}"><div class="pw"><svg viewBox="0 0 96 78" width="96" height="78"><path d="M8 62A40 40 0 0 1 88 62" fill="none" stroke="#e8eaed" stroke-width="7" stroke-linecap="round"/><path class="arc" data-v="${p==null?0:p}" pathLength="100" d="M8 62A40 40 0 0 1 88 62" fill="none" stroke="${col(p)}" stroke-width="7" stroke-linecap="round" style="stroke-dasharray:${pv[d]||0} 100"/><g transform="translate(48 50) scale(.78) translate(-48 -43)">${petBody(a,m)}</g>${m==='s'||m==='a'?'<circle cx="80" cy="60" r="5" fill="none" stroke="#5f6368" stroke-width="2"/><path d="M84 64l5 5" stroke="#5f6368" stroke-width="2" stroke-linecap="round"/>':''}</svg></div><div class="mu"><b>${nm[d]}</b> ${p==null?'--':p+'%'}<br>${Z(a[1],a[2])}</div></div>`},
  card=c=>`<div class="card"><div class="row"><b>${c.n}</b><span class="tag hi">-${Math.round(c.lost)}</span><span class="tag">${nm[c.dim]}</span></div><div class="mu">${c.why}</div>
  <div class="row"><button data-go="${c.tab}">${Z('Open','前往')}</button>${c.cd?`<button data-d="${c.id}">${Z('Mark done','標記完成')}</button>`:''}</div></div>`,
  F=cur?low.filter(c=>c.dim===cur):low.slice(0,6),pa=cur&&PETS[cur][pi[cur]];
- $('#p-score').innerHTML=`<div class="card"><div style="display:flex;justify-content:center">${big}</div><div class="pets" style="margin-top:6px">${Object.keys(PETS).map(pet).join('')}</div>
+ $('#scPct').textContent=all==null?'--':all+'%';$('#scPct').style.color=col(all);
+ $('#scInfo').title=Z('Tap a pet to filter. Tap an icon to jump to its tab. A guide for what to act on, not a measurement. Pest checks look at risk conditions only. Not a substitute for certified fire equipment.','點寵物可篩選；點圖示會跳到對應分頁。此分數是行動提示，不是精確測量；害蟲項目只看環境誘因；不能取代合格的消防設備。');
+ const ic=c=>`<button class="ci ${c.st==='unk'?'unk':done[c.id]?'dn':c.lost>=10?'hi':'md'} ${selC===c.id?'pick':''}" data-c="${c.id}" title="${c.n}" style="color:${(TCOL[c.tab]||['#5f6368'])[0]}">${IC[c.tab]?svg(c.tab,18):'•'}</button>`,
+ CL=low.concat(dd,un).filter((c,i,a)=>a.indexOf(c)===i&&(!cur||c.dim===cur)),sc=C.find(c=>c.id===selC);
+ $('#p-score').innerHTML=`<div class="pets">${Object.keys(PETS).map(pet).join('')}</div>
  <div class="row"><button id="pChg" class="${pickPet?'on':''}">${Z('Change pets','換寵物')}</button><label><input type="checkbox" id="aM" ${alertMode?'checked':''}> ${Z('Typhoon warning active (demo switch)','颱風警報中（示範開關）')}</label></div>
- ${pickPet?`<div>${Object.keys(PETS).map(d=>`<div class="row"><span class="mu" style="width:64px">${nm[d]}</span>${PETS[d].map((a,k)=>`<button data-pp="${d}:${k}" class="${pi[d]===k?'on':''}" title="${Z(a[1],a[2])}">${mini(a,'h')}</button>`).join('')}</div>`).join('')}<button id="pRnd">🎲 ${Z('Random','隨機')}</button></div>`:''}</div>
- ${cur?`<div class="card"><div class="row">${mini(pa,mood(D[cur]?D[cur].pct:null))}<div><b>${Z(pa[1],pa[2])}</b><div class="mu">${line[mood(D[cur]?D[cur].pct:null)]}</div></div></div></div><b>🔍 ${Z('What it found','牠發現的事')}</b>`:`<b>${Z('What to do first','優先處理')}</b>`}
- ${F.length?F.map(card).join(''):`<div class="card">${Z('Nothing to fix right now.','目前沒有需要處理的項目。')}</div>`}
- ${dd.length?`<div class="card"><b>${Z('Done','已完成')}</b>${dd.map(c=>`<div class="row"><span>✓ ${c.n}</span><button data-d="${c.id}">${Z('Undo','復原')}</button></div>`).join('')}</div>`:''}
- ${un.length?`<div class="card"><b>${Z('Waiting for data (not counted)','等待資料（不計分）')}</b>${un.map(c=>`<div class="mu">• ${c.n}: ${c.why}</div>`).join('')}</div>`:''}
- <div class="mu">${Z('Tap a pet to see what it found. A guide for what to act on, not a measurement. Weights are adjustable heuristics. Pest checks look at risk conditions only. Not a substitute for certified fire equipment.','點寵物看牠發現的事。此分數是行動提示，不是精確測量；權重為可調整的經驗規則；害蟲項目只看環境誘因；不能取代合格的消防設備。')}</div>`;
+ ${pickPet?`<div>${Object.keys(PETS).map(d=>`<div class="row"><span class="mu" style="width:64px">${nm[d]}</span>${PETS[d].map((a,k)=>`<button data-pp="${d}:${k}" class="${pi[d]===k?'on':''}" title="${Z(a[1],a[2])}">${mini(a,'h')}</button>`).join('')}</div>`).join('')}<button id="pRnd">${svg('dice',16)} ${Z('Random','隨機')}</button></div>`:''}
+ <div class="cicons">${CL.length?CL.map(ic).join(''):`<span class="mu">${Z('Nothing to fix right now.','目前沒有需要處理的項目。')}</span>`}</div>
+ ${sc?`<div class="mu"><b>${sc.n}</b> ${sc.lost>0?`<span class="tag hi">-${Math.round(sc.lost)}</span>`:''}<br>${sc.why}</div>${sc.cd?`<div class="row"><button data-d="${sc.id}">${done[sc.id]?Z('Undo','復原'):Z('Mark done','標記完成')}</button></div>`:''}`:''}`;
+ document.querySelectorAll('#p-score [data-c]').forEach(b=>b.onclick=()=>{selC=b.dataset.c;const c=C.find(x=>x.id===selC);if(c&&c.tab)go(c.tab);else pScore()});
  requestAnimationFrame(()=>requestAnimationFrame(()=>{document.querySelectorAll('#p-score .arc').forEach(a=>a.style.strokeDasharray=a.dataset.v+' 100')}));
  Object.keys(D).forEach(k=>pv[k]=D[k]?D[k].pct:0);
  if(patD){const e=document.querySelector(`.pet[data-pet="${patD}"] .pe`);if(e)e.classList.add('pat');patD=null}
@@ -683,7 +720,37 @@ function devCard(){const D=items.filter(i=>i.dev),Wn=of('window'),H=heats(),ac=o
  $('#p-cool').insertAdjacentHTML('beforeend',`<div class="card"><b>${Z('4. Your devices','4. 你的設備')}</b>`+(D.length?`<table class="ct"><tr><th></th><th>${Z('State','狀態')}</th><th>W</th><th>kWh/${Z('day','日')}</th><th></th></tr>${D.map(i=>`<tr><td>#${i.id} ${T[i.type][0]}</td><td>${i.dev.on?Z('On','開'):Z('Off','關')}</td><td>${i.dev.w}</td><td>${r2(e(i))}</td><td><button class="small" data-edit="${i.id}">${Z('Edit','編輯')}</button></td></tr>`).join('')}</table>
  <div class="mu">${Z('Estimated total','估計合計')}: ${r2(tot)} kWh/${Z('day','日')} (NT$ ${r1(tot*rate)}). ${Z('Watts and hours are your own inputs; a smart plug can make them live.','功率與時數是你輸入的；日後可接智慧插座變成即時。')}</div>`:`<div class="mu">${Z('No devices yet. Scans find fridges, ovens, washers and TVs. Add air conditioners and fans in Objects (Add to room), then set on/off, power and aim.','尚無設備。掃描會辨識冰箱、烤箱、洗衣機與電視；冷氣與風扇請在「物件」分頁用「加入房間」新增，再設定開關、功率與出風方向。')}</div>`)+
  (N.length?`<ul>${N.map(x=>`<li>${x}</li>`).join('')}</ul>`:'')+`<div class="mu">${Z('Coverage uses a 30° spread (60° swinging) and 6 m reach (fan 4 m). These are rules of thumb, not airflow simulation.','覆蓋範圍以 30°（擺風 60°）、6 m（風扇 4 m）估算，是經驗法則，不是氣流模擬。')}</div></div>`);
- document.querySelectorAll('#p-cool [data-edit]').forEach(b=>b.onclick=()=>{sel=items.find(i=>i.id==b.dataset.edit);tab='obj';refresh()})}
+ document.querySelectorAll('#p-cool [data-edit]').forEach(b=>b.onclick=()=>{sel=items.find(i=>i.id==b.dataset.edit);openObj();refresh()})}
+/* ================= Infestation DLC (risk conditions from the model; no pest detection) ================= */
+function gapList(){const ws=of('wall'),out=[];if(!ws.length)return out;
+ items.filter(i=>!isS(i.type)&&i.dim[1]>=.5).forEach(o=>{const c=Math.cos(o.rot),s=Math.sin(o.rot),hx=o.dim[0]/2,hz=o.dim[2]/2;let g=0;
+  [[hx+.01,0],[-hx-.01,0],[0,hz+.01],[0,-hz-.01]].forEach(([lx,lz])=>{const d=near({x:o.x+lx*c+lz*s,z:o.z-lx*s+lz*c},ws);if(d>.03&&d<.25)g++});if(g)out.push([o,g])});return out}
+const kitNearDoor=()=>{const en=of('door').concat(of('opening'));return items.filter(o=>KIT.includes(o.type)&&en.some(e=>rectDist(o,e)<2))};
+function pInf(){const r=hist[hist.length-1]||{},G=gapList(),K=kitNearDoor(),O=items.filter(i=>!isS(i.type)),nm=o=>`#${o.id} ${T[o.type][0]}`,
+ wet=O.filter(o=>['sink','toilet','bathtub','washerDryer','dishwasher','refrigerator'].includes(o.type)),
+ sec=(t,b)=>`<div class="card"><b>${t}</b>${b}</div>`,ul=a=>`<ul>${a.map(x=>`<li>${x}</li>`).join('')}</ul>`;
+ $('#p-inf').innerHTML=sec(Z('Infestation check','病蟲害檢查'),`<div class="mu">${Z('Finds spots that attract or hide rodents and insects. These are risk conditions read from the model, not detection: no pest sensor is connected.','找出容易吸引或藏匿老鼠與蟲害的位置。這是從模型判斷的環境風險，不是偵測：目前未連接害蟲感測器。')}</div>`)+
+ sec(Z('Hidden gaps','隱蔽縫隙'),G.length?`<div class="mu">${Z('3–25 cm between furniture and walls is dark and hard to clean (orange rings in 3D).','家具與牆之間 3–25 公分陰暗又難清潔（3D 橘色圈）。')}</div>${ul(G.map(([o,g])=>`${nm(o)}: ${g} ${Z('side(s)','側')}`))}<div class="mu">${Z('Push it flush to the wall, or leave about 30 cm so you can clean behind it.','推到緊貼牆面，或留約 30 cm 方便清掃後方。')}</div>`:`<div class="mu">${Z('No narrow gaps found.','沒有發現狹縫。')}</div>`)+
+ sec(Z('Food area','廚房與食物區'),`${K.length?`<div class="mu">${Z('Near a door or opening (within 2 m): ','靠近門或開口（2 m 內）：')}${K.map(nm).join(', ')}</div>`:''}${ul([Z('Keep food in sealed containers; close the bin lid and empty it daily.','食物放密封容器；垃圾桶加蓋並每天清理。'),Z('Do not leave pet food out overnight.','寵物飼料不要整夜放在外面。')])}`)+
+ sec(Z('Moisture','潮濕'),`${wet.length?`<div class="mu">${Z('Water sources: ','有水的設備：')}${wet.map(nm).join(', ')}</div>`:''}<div class="mu">${Z('Humidity now: ','目前濕度：')}${r.H==null||isNaN(r.H)?Z('no data','沒有資料'):Math.round(r.H)+'% '+(r.H>=75?Z('(damp, attracts pests and mold)','（偏濕，易招蟲與黴菌）'):Z('(fine)','（正常）'))}</div>${ul([Z('Fix drips and wipe pooled water; ventilate after showers and cooking.','修補滴漏、擦乾積水；洗澡與煮飯後通風。')])}`)+
+ sec(Z('Entry points','入侵路徑'),`<div class="mu">${of('door').length} ${Z('door(s)','扇門')}, ${of('opening').length} ${Z('opening(s)','個開口')}, ${of('window').length} ${Z('window(s)','扇窗')}</div>${ul([Z('Fit door sweeps: mice can pass gaps of about 6 mm.','門底加裝擋條：老鼠能鑽過約 6 mm 的縫。'),Z('Use window screens; seal gaps around pipes and cables.','窗戶裝紗窗；封住管線周圍的縫隙。')])}`)+
+ sec(Z('Where to put monitors','監測點位置'),`<div class="mu">${Z('Place sticky monitors along walls at the orange rings and near the food area, then check them weekly. Sanitation and sealing work better than poison.','在橘色圈與食物區旁的牆邊放黏板監測，每週檢查。清潔與封堵比毒餌更有效。')}</div>`)}
+function infOv(){const m=new THREE.MeshBasicMaterial({color:0xe37400,transparent:true,opacity:.6,side:THREE.DoubleSide});
+ gapList().map(g=>g[0]).concat(kitNearDoor()).forEach(o=>{const R=Math.max(o.dim[0],o.dim[2])*.6,r=new THREE.Mesh(new THREE.RingGeometry(R,R+.06,32),m);r.rotation.x=-Math.PI/2;r.position.set(o.x,.02,o.z);ov.add(r)})}
+/* ================= Power outage prep DLC ================= */
+const OUTL=[['fl','Flashlights or lanterns, with spare batteries','手電筒或提燈與備用電池'],['pb','Power banks charged (phones, router, air box)','行動電源已充飽（手機、路由器、空氣盒）'],['wa','Drinking water for 3 days (about 3 L per person per day)','三天飲用水（每人每天約 3 公升）'],['fd','Non-perishable food and a manual can opener','不需冷藏的食物與手動開罐器'],['ra','Battery or hand-crank radio','電池或手搖收音機'],['ca','Some cash (card readers may be down)','一些現金（刷卡機可能無法使用）']];
+function outCheck(L){const n=OUTL.filter(x=>done['po'+x[0]]).length;L('safe','out','Power outage prep','停電準備',15,15*(1-n/OUTL.length)*(alertMode?1:.6),Z(`${n}/${OUTL.length} preparations ticked`,`已勾選 ${n}/${OUTL.length} 項準備`),'out')}
+function kitSpot(){const en=of('door').concat(of('opening')),W=of('window'),H=heats();let best=null;
+ en.forEach(d=>{let nx=Math.sin(d.rot),nz=Math.cos(d.rot);if(-d.x*nx-d.z*nz<0){nx=-nx;nz=-nz}const p={x:d.x+nx*.7,z:d.z+nz*.7},dw=near(p,W),dh=near(p,H),ok=(dw===null||dw>=1)&&(dh===null||dh>=1.5);if(!best||(ok&&!best.ok))best={...p,ok}});return best}
+function pOut(){const D=items.filter(i=>i.dev&&i.dev.on&&i.dev.w>=300),F=of('refrigerator').length,ks=kitSpot(),b=xv(),n=OUTL.filter(x=>done['po'+x[0]]).length,
+ sec=(t,b)=>`<div class="card"><b>${t}</b>${b}</div>`,ul=a=>`<ul>${a.map(x=>`<li>${x}</li>`).join('')}</ul>`;
+ $('#p-out').innerHTML=sec(Z('Power outage prep','停電準備'),`<div class="mu">${Z('Typhoons often cut power. ','颱風常造成停電。')}${alertMode?Z('A typhoon warning is active: prepare now.','目前有颱風警報：請立刻準備。'):Z('Tick each item once it is ready.','準備好一項就勾一項。')} ${n}/${OUTL.length}</div>${OUTL.map(x=>`<label style="display:block"><input type="checkbox" data-po="${x[0]}" ${done['po'+x[0]]?'checked':''}> ${Z(x[1],x[2])}</label>`).join('')}`)+
+ sec(Z('Where to keep the kit','急難包放哪裡'),ks?`<div class="mu">${Z('About 0.7 m inside the main door (yellow marker in 3D)','主要出入口內約 0.7 m（3D 黃色標記）')}${ks.ok?'':Z('. It is within 1 m of a window or 1.5 m of a heat source, so move it if you can.','。但離窗不到 1 m 或離熱源不到 1.5 m，可以的話請移開。')}</div>`:`<div class="mu">${Z('No door found in the model.','模型中找不到門。')}</div>`)+
+ sec(Z('Food and fridge','食物與冰箱'),`<div class="mu">${F?F+' '+Z('fridge(s) found.','台冰箱。'):Z('No fridge found.','沒有找到冰箱。')}</div>${ul([Z('Keep the door closed: an unopened fridge stays cold about 4 hours, a full freezer about 48 hours (24 if half full).','少開冰箱門：未開啟的冷藏約可保冷 4 小時，裝滿的冷凍約 48 小時（半滿約 24 小時）。'),Z('Freeze water bottles or ice packs in advance.','提前冷凍寶特瓶水或冰袋。')])}`)+
+ sec(Z('Heavy devices','大功率設備'),D.length?`<div class="mu">${D.map(i=>`#${i.id} ${T[i.type][0]} (${i.dev.w} W)`).join(', ')}</div><div class="mu">${Z('Switch these off or unplug them during an outage so they do not surge when power returns.','停電時請關閉或拔掉，避免來電瞬間突波。')}</div>`:`<div class="mu">${Z('None on right now.','目前沒有開啟的大功率設備。')}</div>`)+
+ sec(Z('Heat and light','悶熱與照明'),ul([b?Z(`Without AC, open windows ${b.i} and ${b.k} for a cross breeze when it is cooler outside.`,`沒有冷氣時，室外較涼可同時開第 ${b.i}、${b.k} 扇窗形成對流。`):Z('Without AC, open a window and use a battery fan.','沒有冷氣時，開窗並使用電池風扇。'),of('bed').length?Z('Keep a light within reach of each bed.','每張床旁放一支手電筒。'):Z('Keep a light near where you sleep.','睡覺的地方旁放一支手電筒。'),of('stairs').length?Z('Leave a light at the stairs.','樓梯口放一盞燈。'):Z('Prefer LED lights to candles: candles are a fire risk.','用 LED 燈取代蠟燭：蠟燭有火災風險。'),Z('Put the air box and router on a power bank so alerts keep working.','把空氣盒與路由器接行動電源，警示才不會中斷。')]))
+ document.querySelectorAll('#p-out [data-po]').forEach(c=>c.onchange=()=>{done['po'+c.dataset.po]=c.checked;pOut();pScore()})}
+function outOv(){const k=kitSpot();if(!k)return;const m=new THREE.Mesh(new THREE.CylinderGeometry(.18,.18,.04,24),new THREE.MeshBasicMaterial({color:0xf5c518}));m.position.set(k.x,.03,k.z);ov.add(m)}
 refresh();
 if(lang==='zh')setLang('zh');
 

@@ -1,0 +1,604 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Home Guardian</title>
+<style>
+:root{--bg:#f4f6f9;--pn:#fff;--bd:#dadce0;--tx:#202124;--mu:#5f6368;--bl:#1a73e8;--am:#e37400;--rd:#d93025}
+*{box-sizing:border-box}html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--tx);font:14px/1.45 Roboto,-apple-system,Helvetica,sans-serif;display:flex;flex-direction:column;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}
+header{display:flex;gap:8px;align-items:center;padding:8px 12px;background:#202124;color:#fff;flex-wrap:wrap}
+header h1{font-size:16px;margin:0 8px 0 0;font-weight:600}
+button,select,input{font:inherit;background:#fff;color:var(--tx);border:1px solid var(--bd);border-radius:8px;padding:5px 10px}
+button{cursor:pointer}button.on{border-color:var(--bl);color:var(--bl);background:#e8f0fe}button.del{color:var(--rd)}
+main{flex:1;display:flex;min-height:0}#vp{flex:1;min-width:0;position:relative}#vp canvas{display:block}
+aside{width:340px;border-left:1px solid var(--bd);background:var(--pn);overflow:auto;padding:10px}
+.tabs{display:flex;gap:5px;margin-bottom:8px;flex-wrap:wrap}.tabs button{flex:1;padding:5px 6px;font-size:13px}table.ct{width:100%;border-collapse:collapse;font-size:12px}table.ct td,table.ct th{border-bottom:1px solid var(--bd);padding:3px 2px;text-align:right}table.ct td:first-child,table.ct th:first-child{text-align:left}
+.card{border:1px solid var(--bd);border-radius:8px;padding:8px 10px;margin:8px 0}
+.mu{color:var(--mu);font-size:12px}.row{display:flex;gap:6px;align-items:center;margin:4px 0;flex-wrap:wrap}
+.item{padding:3px 6px;border-radius:5px;cursor:pointer}.item:hover,.item.sel{background:#e8f0fe}
+.tag{font-size:11px;padding:1px 7px;border-radius:9px;background:#eef1f6}.tag.hi{background:#fde7e4;color:var(--rd)}
+.dims label{display:flex;flex-direction:column;font-size:11px;color:var(--mu)}.dims input{width:64px}
+ul{margin:4px 0;padding-left:18px}
+#banner{display:none;padding:8px 14px;font-weight:600;color:#fff}#banner.l1{display:block;background:#e37400}#banner.l2{display:block;background:#d93025;animation:fl 1s infinite}#banner.l3{display:block;background:#5f6368}@keyframes fl{50%{opacity:.6}}
+.vals{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}.vals div{text-align:center;border:1px solid var(--bd);border-radius:8px;padding:6px}.vals b{font-size:20px;display:block}
+canvas.sp{width:100%;height:46px;background:#f1f3f4;border-radius:6px;margin-top:4px}footer{padding:5px 12px;font-size:12px;color:var(--mu);border-top:1px solid var(--bd);background:#fff}
+@media(max-width:800px){main{flex-direction:column}aside{width:100%;height:48%;border-left:0;border-top:1px solid var(--bd)}}
+</style></head><body>
+<header><h1>Home Guardian</h1><button id="bDemo">Load demo living room</button><button id="bFile">Import scan (.json)</button>
+<button id="bLang">中文</button><input type="file" id="fIn" accept=".json" hidden><span id="st" style="font-size:12px;opacity:.85">No scan loaded</span></header>
+<div id="banner"></div>
+<main><div id="vp"></div><aside>
+<div class="tabs"><button data-t="score">Score</button><button data-t="obj" class="on">Objects</button><button data-t="ty">Typhoon</button><button data-t="fire">Fire</button><button data-t="air">Air/Power</button><button data-t="cool">Cooling</button></div>
+<div id="p-score"></div><div id="p-obj" hidden></div><div id="p-ty" hidden></div><div id="p-fire" hidden></div><div id="p-air" hidden></div><div id="p-cool" hidden></div></aside></main>
+<footer>Supplementary alerts only: this does not replace certified smoke or fire alarms. Thresholds are demo reference values. Scans and models stay on this device.</footer>
+
+<!-- Offline: replace these URLs with files bundled in the app (see notes). -->
+<script src="https://cdn.jsdelivr.net/npm/mqtt@5.10.1/dist/mqtt.min.js"></script>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
+<script type="module">
+import * as THREE from 'three';
+import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
+import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+const $=s=>document.querySelector(s),r1=n=>n.toFixed(1),r2=n=>n.toFixed(2);
+
+/* ---- Types. All sizes are real meters. kind: s = wall-mounted surface, o = free-standing object ---- */
+const T={wall:['Wall','#94a3b8','s'],door:['Door','#b45309','s'],window:['Window','#38bdf8','s'],opening:['Opening','#64748b','s'],
+sofa:['Sofa','#3b82f6'],chair:['Chair','#60a5fa'],table:['Table','#a1662f'],bed:['Bed','#6b8cae'],storage:['Cabinet','#78716c'],
+refrigerator:['Fridge','#9ca3af'],stove:['Stove','#c2410c'],oven:['Oven','#c2410c'],sink:['Sink','#a8a29e'],dishwasher:['Dishwasher','#9ca3af'],
+washerDryer:['Washer/dryer','#9ca3af'],toilet:['Toilet','#d1d5db'],bathtub:['Bathtub','#d1d5db'],television:['TV','#1f2937'],
+fireplace:['Fireplace','#c2410c'],stairs:['Stairs','#a3a3a3'],heater:['Heater','#dc2626'],other:['Other','#a3a3a3']};
+const HEAT=['stove','oven','fireplace','heater'],isS=t=>T[t][2]==='s';
+
+/* ---- Scene ---- */
+const vp=$('#vp'),sc=new THREE.Scene();sc.background=new THREE.Color(0xf4f6f9);
+const cam=new THREE.PerspectiveCamera(50,1,.1,100),rd=new THREE.WebGLRenderer({antialias:true});vp.appendChild(rd.domElement);
+const ct=new OrbitControls(cam,rd.domElement);
+sc.add(new THREE.HemisphereLight(0xffffff,0x9aa4b2,1.3));const dl=new THREE.DirectionalLight(0xffffff,.7);dl.position.set(4,8,5);sc.add(dl);
+const world=new THREE.Group(),ov=new THREE.Group();let grid=null;sc.add(world,ov);
+const size=()=>{const w=vp.clientWidth,h=vp.clientHeight;rd.setSize(w,h);cam.aspect=w/h;cam.updateProjectionMatrix()};
+addEventListener('resize',size);size();(function loop(){requestAnimationFrame(loop);ct.update();rd.render(sc,cam)})();
+
+/* ---- State ---- */
+let items=[],uid=1,sel=null,tab='score',sensor=null,pick=false,room={ceil:2.5,ext:6};
+/* ---- Detailed models: per-type parts built from primitives (bottom-anchored, meters), procedural wood/fabric/metal textures,
+   plus optional real .glb models per type (same logic as the original site). ---- */
+const MODEL_URLS={/* sofa:'models/sofa.glb', chair:'models/chair.glb', bed:'models/bed.glb', table:'models/table.glb', refrigerator:'models/fridge.glb' */};
+const glbLoader=new GLTFLoader(),glbCache={},TEX={};
+const shade=(c,d)=>'#'+c.clone().offsetHSL(0,0,d).getHexString();
+function getTex(kind,hex,w,h){const k=kind+hex;if(!TEX[k]){const base=new THREE.Color(hex),cv=document.createElement('canvas');cv.width=cv.height=128;const g=cv.getContext('2d');
+ g.fillStyle='#'+base.getHexString();g.fillRect(0,0,128,128);g.globalAlpha=.4;
+ if(kind==='wood')for(let i=0;i<18;i++){const y=i/18*128;g.strokeStyle=shade(base,(Math.random()-.5)*.16);g.lineWidth=1+Math.random()*2;g.beginPath();g.moveTo(0,y);for(let x=0;x<=128;x+=16)g.lineTo(x,y+Math.sin(x*.05+i)*3);g.stroke()}
+ else if(kind==='fabric')for(let i=0;i<128;i+=6){g.strokeStyle=shade(base,(i/6)%2?.08:-.08);g.beginPath();g.moveTo(i,0);g.lineTo(i,128);g.moveTo(0,i);g.lineTo(128,i);g.stroke()}
+ else for(let i=0;i<90;i++){const y=Math.random()*128;g.strokeStyle=shade(base,(Math.random()-.5)*.12);g.beginPath();g.moveTo(0,y);g.lineTo(128,y);g.stroke()}
+ const t=new THREE.CanvasTexture(cv);t.wrapS=t.wrapT=THREE.RepeatWrapping;TEX[k]=t}
+ const t=TEX[k].clone();t.needsUpdate=true;t.repeat.set(Math.max(1,w/.4),Math.max(1,h/.4));return t}
+function P(g,w,h,d,col,x,y,z,o={}){const geo=new THREE.BoxGeometry(Math.max(w,.004),Math.max(h,.004),Math.max(d,.004)),p={color:col,transparent:true,opacity:o.op??.92,roughness:.8};
+ if(o.tx)p.map=getTex(o.tx,col,w,Math.max(h,d));const m=new THREE.Mesh(geo,new THREE.MeshStandardMaterial(p));m.position.set(x,y,z);g.add(m);
+ if(!o.ne){const e=new THREE.LineSegments(new THREE.EdgesGeometry(geo),new THREE.LineBasicMaterial({color:0x0f172a,transparent:true,opacity:.4}));e.position.copy(m.position);g.add(e)}return m}
+function C(g,r,h,col,x,y,z,o={}){const p={color:col,roughness:.6};if(o.tx)p.map=getTex(o.tx,col,r*6,h);
+ const m=new THREE.Mesh(new THREE.CylinderGeometry(r,r,h,12),new THREE.MeshStandardMaterial(p));m.position.set(x,y,z);if(o.rx)m.rotation.x=Math.PI/2;g.add(m);return m}
+function model(g,t,sx,sy,sz,col){const lr=Math.max(.012,Math.min(sx,sz)*.05),D='#2b2f33',
+ legs=(h,c,tx,fx,fz)=>[[-1,-1],[1,-1],[-1,1],[1,1]].forEach(([a,b])=>C(g,lr,h,c,a*sx*fx,h/2,b*sz*fz,{tx})),
+ box=(c,tx,o)=>P(g,sx,sy,sz,c,0,sy/2,0,{tx,...o}),front=(w,h,y,c)=>P(g,sx*w,sy*h,.006,c,0,sy*y,sz/2+.003,{ne:1});
+ if(t==='sofa'){P(g,sx,sy*.42,sz,col,0,sy*.21,0,{tx:'fabric'});P(g,sx,sy*.58,sz*.2,col,0,sy*.71,-sz*.4,{tx:'fabric'});
+  [-1,1].forEach(s=>P(g,sx*.14,sy*.5,sz,col,s*sx*.43,sy*.5,0,{tx:'fabric'}))}
+ else if(t==='chair'){P(g,sx*.86,sy*.1,sz*.86,col,0,sy*.42,0,{tx:'fabric'});P(g,sx*.86,sy*.5,sz*.12,col,0,sy*.72,-sz*.43,{tx:'fabric'});legs(sy*.42,'#334155','metal',.36,.36)}
+ else if(t==='table'){P(g,sx,sy*.08,sz,col,0,sy*.92,0,{tx:'wood'});legs(sy*.88,'#3a2a1a','wood',.42,.42)}
+ else if(t==='bed'){P(g,sx,sy*.18,sz,'#5c4a3a',0,sy*.09,0,{tx:'wood'});P(g,sx*.94,sy*.32,sz*.94,col,0,sy*.34,0,{tx:'fabric'});
+  P(g,sx*.06,sy,sz,'#5c4a3a',-sx*.47,sy/2,0,{tx:'wood'});P(g,sx*.22,sy*.14,sz*.7,'#f5f2ea',-sx*.32,sy*.57,0,{tx:'fabric'})}
+ else if(t==='storage'){box(col,'wood');front(.98,.98,.5,D);[-1,1].forEach(s=>P(g,.03,.03,.03,D,s*sx*.12,sy*.5,sz/2+.015,{ne:1}))}
+ else if(t==='refrigerator'){box(col,'metal');P(g,sx*1.001,sy*.02,sz*1.001,D,0,sy*.32,0,{ne:1});C(g,Math.max(.01,sx*.04),sy*.4,D,sx*.42,sy*.55,sz/2+.012,{tx:'metal'})}
+ else if(t==='stove'){box('#d9d2c4');P(g,sx,sy*.05,sz,col,0,sy*.975,0,{tx:'metal'});
+  [[-1,-1],[1,-1],[-1,1],[1,1]].forEach(([a,b])=>C(g,Math.min(sx,sz)*.16,.012,D,a*sx*.22,sy+.006,b*sz*.2));front(.7,.4,.45,D)}
+ else if(t==='oven'){box(col,'metal');front(.8,.5,.45,D);P(g,sx*.6,.02,.03,'#9ca3af',0,sy*.78,sz/2+.03,{ne:1})}
+ else if(t==='sink'){P(g,sx*.96,sy*.85,sz*.96,'#d9d2c4',0,sy*.425,0);P(g,sx,sy*.12,sz,'#c9a876',0,sy*.91,0,{tx:'wood'});
+  P(g,sx*.55,.02,sz*.55,'#6b7280',0,sy*.97,0,{ne:1});C(g,.012,.18,'#9ca3af',0,sy+.09,-sz*.3,{tx:'metal'})}
+ else if(t==='dishwasher'){box(col,'metal');front(.9,.12,.9,D);P(g,sx*.6,.02,.03,'#9ca3af',0,sy*.8,sz/2+.03,{ne:1})}
+ else if(t==='washerDryer'){box(col,'metal');C(g,Math.min(sx,sy)*.3,.02,'#1f2937',0,sy*.48,sz/2+.01,{rx:1});front(.9,.1,.9,D)}
+ else if(t==='toilet'){C(g,Math.min(sx,sz)*.34,sy*.45,col,0,sy*.225,sz*.12);P(g,sx*.8,sy*.55,sz*.28,col,0,sy*.72,-sz*.36)}
+ else if(t==='bathtub'){box(col);P(g,sx*.88,sy*.5,sz*.8,'#e5e7eb',0,sy*.78,0,{ne:1})}
+ else if(t==='television'){P(g,sx,sy*.9,sz,'#111827',0,sy*.55,0);P(g,sx*.3,sy*.1,Math.max(sz*3,.15),'#1f2937',0,sy*.05,0)}
+ else if(t==='fireplace'){box(col);P(g,sx*.5,sy*.45,.02,'#111827',0,sy*.3,sz/2+.01,{ne:1});P(g,sx*1.05,sy*.06,sz*1.1,'#78716c',0,sy*.97,0)}
+ else if(t==='stairs'){const n=Math.max(2,Math.round(sy/.18));for(let i=0;i<n;i++)P(g,sx,sy*(i+1)/n,sz/n,col,0,sy*(i+1)/n/2,-sz/2+sz/n*(i+.5))}
+ else if(t==='heater'){for(let i=0;i<6;i++)P(g,sx/8,sy*.9,sz,col,-sx*.42+i*sx*.168,sy*.5,0)}
+ else if(t==='window'){const f=Math.max(.02,Math.min(sy,sz)*.08),F='#475569';
+  P(g,sx,f,sz,F,0,sy-f/2,0);P(g,sx,f,sz,F,0,f/2,0);P(g,f,sy,sz,F,-sx/2+f/2,sy/2,0);P(g,f,sy,sz,F,sx/2-f/2,sy/2,0);P(g,sx,f*.6,sz,F,0,sy/2,0);P(g,f*.6,sy,sz,F,0,sy/2,0);
+  P(g,sx*.94,sy*.94,sz*.5,col,0,sy/2,0,{op:.28,ne:1})}
+ else if(t==='door'){P(g,sx,sy,sz,col,0,sy/2,0,{tx:'wood',op:.75});C(g,.02,.1,'#9ca3af',sx*.38,sy*.48,sz/2+.03,{rx:1})}
+ else if(t==='wall')P(g,sx,sy,sz,col,0,sy/2,0,{op:.3});
+ else if(t==='opening')P(g,sx,sy,sz,col,0,sy/2,0,{op:.2,ne:1});
+ else P(g,sx,sy,sz,col,0,sy/2,0)}
+function loadGLB(it,url){const ok=()=>items.includes(it)&&MODEL_URLS[it.type]===url;
+ const apply=gl=>{if(!ok())return;const[sx,sy,sz]=it.dim,g=it.mesh,m=gl.scene.clone(true),b=new THREE.Box3().setFromObject(m),s=new THREE.Vector3(),c=new THREE.Vector3();b.getSize(s);b.getCenter(c);
+  while(g.children.length){const k=g.children.pop();k.geometry?.dispose();k.material?.dispose()}
+  m.position.sub(c);const k=Math.min(sx/Math.max(.001,s.x),sy/Math.max(.001,s.y),sz/Math.max(.001,s.z));m.scale.setScalar(k);m.position.y+=s.y*k/2;g.add(m);paint(it)};
+ if(glbCache[url])apply(glbCache[url]);else glbLoader.load(url,gl=>{glbCache[url]=gl;apply(gl)},undefined,e=>console.warn('Model failed, keeping procedural:',url,e))}
+function buildModel(it){const g=it.mesh;while(g.children.length){const c=g.children.pop();c.geometry?.dispose();c.material?.dispose()}
+ const[sx,sy,sz]=it.dim;model(g,it.type,sx,sy,isS(it.type)?Math.max(sz,.06):sz,T[it.type][1]);
+ if(MODEL_URLS[it.type])loadGLB(it,MODEL_URLS[it.type]);g.position.set(it.x,it.y-sy/2,it.z);g.rotation.y=it.rot}
+function paint(it){let em=0;if(it===sel)em=0x333333;else if(tab==='ty'&&it.type==='window')em=0xb45309;else if(tab==='fire'&&HEAT.includes(it.type))em=0x991b1b;
+ it.mesh.traverse(o=>{if(o.material&&o.material.emissive)o.material.emissive.set(em)})}
+function sync(it){buildModel(it);paint(it)}
+function addItem(e){const it={id:uid++,type:e.type,dim:[...e.dim],x:e.x,y:e.y,z:e.z,rot:e.rot,auto:e.auto!==false};
+ it.mesh=new THREE.Group();it.mesh.userData.it=it;world.add(it.mesh);items.push(it);sync(it);return it}
+const of=t=>items.filter(i=>i.type===t),heats=()=>items.filter(i=>HEAT.includes(i.type));
+
+/* ---- Build a room from a list of {type,x,y,z,rot,dim} in meters ---- */
+let ceilM=null;/* display-only ceiling at wall height; one-sided so it is invisible from above */
+function drawCeiling(ws){if(ceilM){sc.remove(ceilM);ceilM.geometry.dispose();ceilM=null}if(!ws.length)return;
+ const xs=[],zs=[];ws.forEach(w=>{const h=w.dim[0]/2;xs.push(w.x-Math.cos(w.rot)*h,w.x+Math.cos(w.rot)*h);zs.push(w.z+Math.sin(w.rot)*h,w.z-Math.sin(w.rot)*h)});
+ const x0=Math.min(...xs),x1=Math.max(...xs),z0=Math.min(...zs),z1=Math.max(...zs);
+ ceilM=new THREE.Mesh(new THREE.PlaneGeometry(x1-x0,z1-z0),new THREE.MeshBasicMaterial({color:0x9aa4b2,transparent:true,opacity:.3,side:THREE.FrontSide}));
+ ceilM.rotation.x=Math.PI/2;ceilM.position.set((x0+x1)/2,room.ceil,(z0+z1)/2);sc.add(ceilM)}
+function build(list,label){
+ world.clear();items=[];uid=1;sel=null;sensor=null;
+ const ws=list.filter(e=>e.type==='wall');
+ if(ws.length){/* auto-align: RoomPlan's axes depend on where the scan started, so snap the dominant wall direction to the grid axes */
+  let s=0,c=0;ws.forEach(w=>{s+=w.dim[0]*Math.sin(4*w.rot);c+=w.dim[0]*Math.cos(4*w.rot)});
+  const phi=-Math.atan2(s,c)/4,cs=Math.cos(phi),sn=Math.sin(phi);
+  list=list.map(e=>({...e,x:e.x*cs+e.z*sn,z:-e.x*sn+e.z*cs,rot:e.rot+phi}))}
+ const base=ws.length?list.filter(e=>e.type==='wall'):list;
+ const fy=Math.min(...base.map(e=>e.y-e.dim[1]/2));
+ const cx=base.reduce((a,e)=>a+e.x,0)/base.length,cz=base.reduce((a,e)=>a+e.z,0)/base.length;
+ list.forEach(e=>addItem({...e,x:e.x-cx,z:e.z-cz,y:e.y-fy}));
+ room.ceil=ws.length?Math.max(...ws.map(w=>w.dim[1])):2.5;
+ drawCeiling(ws);
+ room.ext=Math.max(4,...items.map(i=>Math.hypot(i.x,i.z)+i.dim[0]/2))*2+1;
+ if(grid)sc.remove(grid);grid=new THREE.GridHelper(Math.ceil(room.ext),Math.ceil(room.ext/.3),0x9aa4b2,0xdadce0);sc.add(grid);/* 0.3 m guide cells */
+ ct.target.set(0,1,0);cam.position.set(room.ext*.6,room.ext*.55,room.ext*.7);
+ $('#st').textContent=`${label}: ${of('wall').length} walls, ${of('window').length} windows, ${items.filter(i=>!isS(i.type)).length} objects, ceiling ${r2(room.ceil)} m`;
+ recSensor();refresh();
+ window.webkit?.messageHandlers?.nativeBridge?.postMessage({type:'scanImported',walls:of('wall').length,objects:items.filter(i=>!isS(i.type)).length})}
+
+/* ---- RoomPlan JSON import: transform may be flat or nested, category a string or {name:{}} ---- */
+const flat=t=>Array.isArray(t[0])?t.flat():t,catName=c=>typeof c==='string'?c:Object.keys(c||{})[0];
+function fromRoomPlan(r){const out=[];
+ const add=(arr,fixed)=>(arr||[]).forEach(s=>{const t=flat(s.transform);let ty=fixed||catName(s.category);if(!T[ty])ty='other';
+  out.push({type:ty,x:t[12],y:t[13],z:t[14],rot:Math.atan2(-t[2],t[0]),dim:s.dimensions||[1,1,1]})});
+ add(r.walls,'wall');add(r.doors,'door');add(r.windows,'window');add(r.openings,'opening');add(r.objects);return out}
+function importText(txt){let r;try{r=JSON.parse(txt)}catch{$('#st').textContent='Could not parse that JSON file.';return}
+ const l=fromRoomPlan(r);if(!l.length){$('#st').textContent='The scan has no walls or objects.';return}build(l,'Scan imported')}
+window.importScanJSONText=importText;
+window.importScanJSONBase64=b=>{const s=atob(b),u=new Uint8Array(s.length);for(let i=0;i<s.length;i++)u[i]=s.charCodeAt(i);importText(new TextDecoder().decode(u))};
+window.notify=(level,message)=>{console.log('notify',level,message);window.webkit?.messageHandlers?.nativeBridge?.postMessage({type:'notify',level,message})};/* hook for your notification logic */
+$('#bFile').onclick=()=>$('#fIn').click();
+$('#fIn').onchange=e=>{const f=e.target.files[0];if(f)f.text().then(importText);e.target.value=''};
+$('#bDemo').onclick=()=>{const P=Math.PI/2,W=(x,z,r,l)=>({type:'wall',x,y:1.3,z,rot:r,dim:[l,2.6,.1]});
+ build([W(2.5,0,0,5),W(2.5,4,0,5),W(0,2,P,4),W(5,2,P,4),{type:'door',x:1,y:1,z:4,rot:0,dim:[.9,2,.1]},
+ {type:'window',x:2,y:1.5,z:0,rot:0,dim:[1.6,1.4,.1]},{type:'window',x:5,y:1.05,z:1.5,rot:P,dim:[2.2,2.1,.1]},
+ {type:'sofa',x:2,y:.45,z:3.1,rot:0,dim:[2,.9,.9]},{type:'table',x:2.2,y:.4,z:1.8,rot:0,dim:[1.2,.75,.7]},{type:'chair',x:4.4,y:.45,z:1.6,rot:0,dim:[.5,.9,.5]},
+ {type:'storage',x:.4,y:.9,z:2.6,rot:P,dim:[1.2,1.8,.5]},{type:'stove',x:4.4,y:.45,z:.4,rot:0,dim:[.7,.9,.6]},{type:'refrigerator',x:3.5,y:.9,z:.4,rot:0,dim:[.7,1.8,.7]}],'Demo room')};
+
+/* ---- Geometry helpers (meters) ---- */
+function rectDist(p,it){/* distance from point to the item's rotated footprint */
+ const dx=p.x-it.x,dz=p.z-it.z,c=Math.cos(it.rot),s=Math.sin(it.rot),lx=dx*c-dz*s,lz=dx*s+dz*c;
+ return Math.hypot(Math.max(Math.abs(lx)-it.dim[0]/2,0),Math.max(Math.abs(lz)-Math.max(it.dim[2],.06)/2,0))}
+const near=(p,arr)=>arr.length?Math.min(...arr.map(i=>rectDist(p,i))):null;
+
+/* ---- Fire DLC: air box placement ---- */
+function recSensor(){sensor=null;const ws=of('wall'),W=of('window'),D=of('door'),H=heats(),O=items.filter(i=>!isS(i.type));
+ let best=null;
+ for(const strict of[true,false]){
+  for(const w of ws){const dx=Math.cos(w.rot),dz=-Math.sin(w.rot);let nx=Math.sin(w.rot),nz=Math.cos(w.rot);
+   if(-w.x*nx-w.z*nz<0){nx=-nx;nz=-nz}/* room center is the origin, so point the normal toward it */
+   for(let s=-w.dim[0]/2+.6;s<=w.dim[0]/2-.6;s+=.25){
+    const p={x:w.x+dx*s+nx*.2,z:w.z+dz*s+nz*.2},dW=near(p,W),dD=near(p,D),dH=near(p,H);
+    if(O.some(o=>rectDist(p,o)<.15))continue;
+    if(strict&&((dW!==null&&dW<.8)||(dD!==null&&dD<.8)||(dH!==null&&dH<1.5)))continue;
+    const score=Math.min(dW??2,2)+Math.min(dD??2,2)-(dH===null?0:Math.abs(dH-3)*.8)-Math.hypot(p.x,p.z)*.3;
+    if(!best||score>best.score)best={score,x:p.x,z:p.z,dW,dD,dH,relaxed:!strict}}}
+  if(best)break}
+ if(best)sensor={...best,y:Math.min(1.5,room.ceil-.5)}}
+
+/* ---- Overlays ---- */
+function drawOv(){ov.clear();if(tab==='cool')coolOv();
+ if(tab==='ty')of('window').forEach(w=>{const a=w.dim[0]/2,b=w.dim[1]/2;/* diagonals + cross = the taping pattern described in the panel */
+  const pts=[[-a,-b],[a,b],[-a,b],[a,-b],[0,-b],[0,b],[-a,0],[a,0]].map(([x,y])=>new THREE.Vector3(x,y,.05));
+  const l=new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(pts),new THREE.LineBasicMaterial({color:0x7c2d12}));
+  l.position.set(w.x,w.y,w.z);l.rotation.y=w.rot;ov.add(l)});
+ if(tab==='fire'&&sensor){const s=new THREE.Mesh(new THREE.SphereGeometry(.1),new THREE.MeshBasicMaterial({color:sensorHex()}));s.position.set(sensor.x,sensor.y,sensor.z);
+  const l=new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(sensor.x,0,sensor.z),s.position]),new THREE.LineBasicMaterial({color:sensorHex()}));ov.add(s,l)}}
+
+/* ---- Selection ---- */
+const ray=new THREE.Raycaster(),fl=new THREE.Plane(new THREE.Vector3(0,1,0),0);let dn=null;
+rd.domElement.onpointerdown=e=>dn=[e.clientX,e.clientY];
+rd.domElement.onpointerup=e=>{if(!dn||Math.hypot(e.clientX-dn[0],e.clientY-dn[1])>4)return;
+ const b=rd.domElement.getBoundingClientRect();ray.setFromCamera(new THREE.Vector2((e.clientX-b.left)/b.width*2-1,-(e.clientY-b.top)/b.height*2+1),cam);
+ if(pick){const p=new THREE.Vector3();if(ray.ray.intersectPlane(fl,p)){sensor={...(sensor||{}),x:p.x,z:p.z,y:Math.min(1.5,room.ceil-.5),
+  dW:near(p,of('window')),dD:near(p,of('door')),dH:near(p,heats()),relaxed:false,manual:true};pick=false;refresh()}return}
+ const h=ray.intersectObjects(world.children,true).find(x=>x.object.isMesh);let o=h&&h.object;while(o&&!o.userData.it)o=o.parent;sel=o?o.userData.it:null;refresh()};
+
+/* ---- Panels ---- */
+document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{tab=b.dataset.t;refresh()});
+function refresh(){document.querySelectorAll('.tabs button').forEach(b=>b.classList.toggle('on',b.dataset.t===tab));
+ for(const k of['score','obj','ty','fire','air','cool'])$('#p-'+k).hidden=k!==tab;items.forEach(paint);
+ ({score:pScore,obj:pObj,ty:pTy,fire:pFire,air:pAir,cool:pCool})[tab]();drawOv()}
+function pObj(){const opts=s=>Object.keys(T).map(k=>`<option value="${k}" ${k===s?'selected':''}>${T[k][0]}</option>`).join('');
+ $('#p-obj').innerHTML=`<div class="mu">Types come from the scan. If one is wrong, select it (tap it in 3D or in the list) and change it. Sizes are in meters.</div>`+
+ (sel?`<div class="card"><b>#${sel.id} ${T[sel.type][0]}</b> <span class="tag">${sel.auto?'from scan':'edited'}</span>
+ <div class="row"><select id="tsel">${opts(sel.type)}</select><button id="bRot">Rotate 90°</button><button id="bDel" class="del">Delete</button></div>
+ <div class="row dims">${[['W',sel.dim[0],'w'],['H',sel.dim[1],'h'],['D',sel.dim[2],'d'],['X',sel.x,'x'],['Z',sel.z,'z']].map(([l,v,k])=>`<label>${l}<input type="number" step=".05" data-k="${k}" value="${r2(v)}"></label>`).join('')}</div></div>`:'')+
+ `<div class="row"><select id="addT">${opts('table')}</select><button id="bAdd">Add to room</button></div>
+ <div class="card">${items.length?items.map(i=>`<div class="item ${i===sel?'sel':''}" data-i="${i.id}">#${i.id} ${T[i.type][0]}${i.auto?'':' (edited)'} <span class="mu">${r1(i.dim[0])}×${r1(i.dim[1])} m</span></div>`).join(''):'<span class="mu">Nothing yet. Import a scan or load the demo room.</span>'}</div>`;
+ const s=$('#tsel');if(s){s.onchange=()=>{sel.type=s.value;sel.auto=false;recSensor();sync(sel);refresh()};
+  $('#bRot').onclick=()=>{sel.rot+=Math.PI/2;sync(sel);refresh()};
+  $('#bDel').onclick=()=>{world.remove(sel.mesh);items=items.filter(i=>i!==sel);sel=null;recSensor();refresh()};
+  document.querySelectorAll('.dims input').forEach(inp=>inp.onchange=()=>{const v=parseFloat(inp.value),k=inp.dataset.k;if(!(v===v))return;
+   const bottom=sel.y-sel.dim[1]/2;if('whd'.includes(k)){sel.dim['whd'.indexOf(k)]=Math.max(.05,v);sel.y=bottom+sel.dim[1]/2}else sel[k]=v;sel.auto=false;recSensor();sync(sel);refresh()})}
+ $('#bAdd').onclick=()=>{const t=$('#addT').value,h=isS(t)?1.2:.8;sel=addItem({type:t,x:0,y:h/2,z:0,rot:0,dim:isS(t)?[1,1.2,.1]:[.8,.8,.8],auto:false});recSensor();refresh()};
+ document.querySelectorAll('#p-obj .item').forEach(d=>d.onclick=()=>{sel=items.find(i=>i.id==d.dataset.i);refresh()})}
+
+function pTy(){const ws=of('window').sort((a,b)=>b.dim[0]*b.dim[1]-a.dim[0]*a.dim[1]);
+ const bigDoors=of('door').concat(of('opening')).filter(d=>d.dim[0]>=1.4&&d.dim[1]>=1.8),O=items.filter(i=>!isS(i.type)&&!HEAT.includes(i.type));
+ if(!ws.length&&!bigDoors.length){$('#p-ty').innerHTML='<div class="card">No windows found. Import a scan, or change a misdetected item to “Window” in Objects.</div>';return}
+ $('#p-ty').innerHTML=`<div class="card"><b>Typhoon prep</b><div class="mu">${ws.length} window${ws.length===1?'':'s'}, largest first.</div>
+ <ul><li>Bring in balcony and outdoor items (plants, drying racks).</li><li>Close and lock every window; draw curtains or blinds.</li>${of('door').length?`<li>${of('door').length} door${of('door').length===1?'':'s'}: place a flood barrier or sandbags along the bottom.</li>`:''}</ul></div>`+
+ bigDoors.map(d=>`<div class="card"><b>Large ${T[d.type][0].toLowerCase()} (${r2(d.dim[0])} × ${r2(d.dim[1])} m)</b> <span class="tag hi">Check</span>
+ <div class="mu">If this is a glass or sliding door, treat it as the highest-risk opening: board it up like a large window.</div></div>`).join('')+
+ ws.map((w,k)=>{const[a,b]=w.dim,ar=a*b,big=ar>=1.5||b>=1.8,tape=2*Math.hypot(a,b)+a+b,frame=2*(a+b),
+  nb=[...new Set(O.filter(o=>rectDist(w,o)<1.5).map(o=>T[o.type][0]))];
+  return `<div class="card"><b>Window ${k+1}</b> <span class="tag ${big?'hi':''}">${big?'High risk: large glass':'Standard'}</span>
+  <div class="mu">${r2(a)} × ${r2(b)} m, sill ${r2(w.y-b/2)} m, area ${r2(ar)} m²</div><ul>
+  ${big?`<li>Fit a storm board about ${r2(a+.2)} × ${r2(b+.2)} m, fixed to the frame.</li>`:`<li>Tape an asterisk pattern (two diagonals, a vertical and a horizontal): about ${r1(tape)} m of tape, plus ${r1(frame)} m around the frame edges. The 3D view shows the pattern.</li>`}
+  <li>Seal frame gaps with waterproof tape to reduce leaks.</li>${nb.length?`<li>Move items within 1.5 m of the glass: ${nb.join(', ')}.</li>`:''}</ul></div>`}).join('')+
+ `<div class="mu">Tape only limits flying glass; it does not strengthen the pane. Advice is general: floor level, window type and wind direction are not considered.</div>`}
+
+function pFire(){const H=heats(),f=n=>n===null||n===undefined?'none in room':`${r1(n)} m`;
+ $('#p-fire').innerHTML=`<div class="card"><b>Requirements</b><ul><li>Air box (temperature, CO₂, humidity): 1 per room</li><li>Certified ceiling smoke alarm (recommended): the air box supplements it, never replaces it</li></ul>
+ <div class="mu">Live data: connect the air box below (MQTT) or use the simulator.</div></div>`+
+ (sensor?`<div class="card"><b>Where to place the air box</b>${sensor.manual?' <span class="tag">manual</span>':''}<ul>
+ <li>On the wall at about ${r1(sensor.y)} m height (breathing zone).</li><li>Nearest window: ${f(sensor.dW)}. Nearest door: ${f(sensor.dD)}.</li>
+ <li>${H.length?`Nearest heat source (${[...new Set(H.map(h=>T[h.type][0]))].join(', ')}): ${f(sensor.dH)}.`:'No heat source detected; the middle of a wall works.'}</li></ul>
+ ${sensor.relaxed?'<div class="mu">No spot met every clearance (0.8 m from windows and doors, 1.5 m from heat sources). This is the best compromise; consider moving furniture.</div>':''}
+ <div class="row"><button id="bPick" class="${pick?'on':''}">${pick?'Tap the floor…':'Choose a spot manually'}</button></div>
+ <div class="mu">Heat rises, so smoke and heat reach the ceiling first. That is why a ceiling smoke alarm is also recommended.</div></div>`:'<div class="card">Import a scan or load the demo room first.</div>');
+ const b=$('#bPick');if(b)b.onclick=()=>{pick=!pick;pFire()};fireLive()}
+
+/* ================= DLC: live sensor, alerts, push, air & power ================= */
+const SIMOPT='<option value="off">Off</option><option value="normal">Normal</option><option value="stuffy">Stuffy (CO₂ rising)</option><option value="fire">Possible fire (fast heating)</option><option value="pollution">Pollution (PM2.5 rising)</option><option value="load">Power overload</option>';
+let hist=[],lastSeen=0,lastLv=0,evts=[],cli=null,simT=null,simScen='off',sim={},kwh=0,rate=3,lastIn=0,act={},lastPush={},alarmOn=true,actx=null,beepT=null,offSent=false,
+ mUrl='wss://broker.emqx.io:8084/mqtt',mTop='home-guardian/demo/sensor';
+const sensorHex=()=>lastSeen&&Date.now()-lastSeen>20000?0x6b7280:[0x188038,0xe37400,0xd93025][lastLv];
+function ntopic(){let t=null;try{t=localStorage.getItem('hgTopic')}catch{}
+ if(!t){t='home-guardian-'+Math.random().toString(36).slice(2,8);try{localStorage.setItem('hgTopic',t)}catch{}}return t}
+function unlock(){try{actx=actx||new(window.AudioContext||window.webkitAudioContext)();actx.resume()}catch{}}
+function alarm(on){clearInterval(beepT);beepT=null;if(!on||!alarmOn||!actx)return;
+ const b=()=>{const o=actx.createOscillator(),g=actx.createGain();o.frequency.value=880;g.gain.value=.25;o.connect(g);g.connect(actx.destination);o.start();o.stop(actx.currentTime+.3)};b();beepT=setInterval(b,600)}
+function push(title,msg,pri,tag){title=tr(title);msg=tr(msg);const st=$('#nSt'),t=($('#nTop')?.value||ntopic()).trim();
+ return fetch('https://ntfy.sh/',{method:'POST',body:JSON.stringify({topic:t,title,message:msg,priority:pri,tags:[tag]})})
+ .then(r=>{if(st)st.textContent=r.ok?'Sent '+new Date().toLocaleTimeString():'Push failed: '+r.status}).catch(()=>{if(st)st.textContent='Push failed (check network)'})}
+function connect(){if(!window.mqtt){alert('mqtt.js did not load (network needed).');return}if(cli)cli.end(true);
+ cli=mqtt.connect(mUrl);cli.on('connect',()=>{cli.subscribe(mTop);const b=$('#bConn');if(b)b.textContent='Connected ✓'});
+ cli.on('message',(_,m)=>{try{ingest(JSON.parse(m.toString()))}catch{}});cli.on('error',()=>{const b=$('#bConn');if(b)b.textContent='Connection failed'})}
+function setSim(v){simScen=v;clearInterval(simT);if(v==='off')return;sim={t:26,c:600,h:55,p:10,w:300};
+ simT=setInterval(()=>{const r=()=>Math.random()-.5;
+  if(v==='stuffy')sim.c=Math.min(2600,sim.c+40);if(v==='fire'){sim.t=Math.min(80,sim.t+.25);sim.c+=12}
+  if(v==='pollution')sim.p=Math.min(120,sim.p+2);if(v==='load')sim.w=Math.min(2100,sim.w+40);
+  ingest({temp:sim.t+r()*.2,co2:sim.c+r()*20,hum:sim.h+r(),pm25:sim.p+r()*2,power:sim.w+r()*30})},1000)}
+function ingest(d){const now=Date.now();hist.push({t:now,T:+d.temp,C:+d.co2,H:+d.hum,P:+d.pm25,W:+d.power});while(hist.length&&now-hist[0].t>120000)hist.shift();
+ if(d.kwh!=null)kwh=+d.kwh;else if(!isNaN(+d.power)&&lastIn)kwh+=(+d.power)*Math.min(now-lastIn,10000)/3.6e6;lastIn=now;lastSeen=now;offSent=false;evalNow()}
+function evalNow(){const r=hist[hist.length-1];if(!r)return;const old=hist.find(x=>r.t-x.t<=60000&&r.t-x.t>=10000);
+ const rise=old?(r.T-old.T)/((r.t-old.t)/60000):0,cUp=old?r.C-old.C:0,R=Math.round,cur={};
+ if(r.T>=57||rise>=8||(r.T>=45&&cUp>=500))cur.fire=[2,'🔥 Possible fire! Temperature is rising abnormally. Check the room now and call 119.'];
+ if(r.C>=2000)cur.co2=[2,'CO₂ is very high ('+R(r.C)+' ppm). Open windows and leave the stuffy room.'];else if(r.C>=1000)cur.co2=[1,'CO₂ is high ('+R(r.C)+' ppm). Open a window to ventilate.'];
+ if(r.T>=40&&!cur.fire)cur.temp=[1,'Room is hot ('+r1(r.T)+' °C). Check for heat sources.'];
+ if(r.H>=75)cur.hum=[1,'Humidity is high ('+R(r.H)+'%). Consider dehumidifying.'];
+ if(r.P>=35.5)cur.pm=[1,'PM2.5 is high ('+R(r.P)+' µg/m³). Close windows and run an air purifier.'];
+ if(r.W>=1500)cur.pwr=[1,'Power draw is high ('+R(r.W)+' W), near a typical outlet circuit limit (about 1650 W). Reduce heavy appliances.'];
+ const now=Date.now(),ks=Object.keys(cur);
+ ks.forEach(k=>{const[l,m]=cur[k];if(!act[k]||act[k][0]<l){evts.unshift(`${new Date().toLocaleTimeString()} ${m}`);window.notify?.(l,tr(m));
+   if(l===2)push('Home Guardian ALERT',m,5,'rotating_light');
+   else if(!lastPush[k]||now-lastPush[k]>600000){push('Home Guardian notice',m,2,'information_source');lastPush[k]=now}}});
+ if(!ks.length&&Object.keys(act).length){evts.unshift(`${new Date().toLocaleTimeString()} Back to normal`);push('Home Guardian','All issues cleared.',2,'white_check_mark')}
+ evts=evts.slice(0,8);act=cur;const lv=ks.length?Math.max(...ks.map(k=>cur[k][0])):0;lastLv=lv;
+ alarm(lv===2);banner(lv,ks.sort((x,y)=>cur[y][0]-cur[x][0]).map(k=>cur[k][1]).join('  |  '));paintVals();paintAir();if(tab==='score')pScore();drawOv()}
+function banner(lv,msg){const b=$('#banner');b.className=lv?'l'+lv:'';b.textContent=lv?msg:''}
+setInterval(()=>{if(lastSeen&&Date.now()-lastSeen>20000){banner(3,'⚠ Air box offline for over 20 s: nothing is being monitored. Check power and network.');alarm(false);
+ if(!offSent){offSent=true;window.notify?.(3,tr('Air box offline'));push('Home Guardian','Air box offline for over 20 s. Nothing is being monitored.',4,'warning')}paintVals();paintAir();if(tab==='score')pScore();drawOv()}},2000);
+function spark(id,k,lo,hi,c){const cv=$(id);if(!cv)return;const g=cv.getContext('2d');g.clearRect(0,0,300,46);const pt=hist.filter(p=>!isNaN(p[k]));if(pt.length<2)return;
+ g.strokeStyle=c;g.lineWidth=1.5;g.beginPath();pt.forEach((p,i)=>{const x=i/(pt.length-1)*300,y=44-(Math.min(Math.max(p[k],lo),hi)-lo)/(hi-lo)*42;i?g.lineTo(x,y):g.moveTo(x,y)});g.stroke()}
+const stat=()=>!lastSeen?'No data yet':Date.now()-lastSeen>20000?'Offline':['Normal','Notice','ALERT'][lastLv];
+function paintVals(){if(!$('#vT'))return;const r=hist[hist.length-1];if(r){$('#vT').textContent=r1(r.T);$('#vC').textContent=Math.round(r.C);$('#vH').textContent=Math.round(r.H)}
+ spark('#spT','T',15,70,'#e37400');spark('#spC','C',400,2600,'#1a73e8');$('#stx').textContent=stat();$('#evl').innerHTML=evts.length?evts.join('<br>'):'No events yet'}
+function wireSim(){document.querySelectorAll('.sSc').forEach(x=>{x.value=simScen;x.onchange=e=>setSim(e.target.value)})}
+function fireLive(){$('#p-fire').insertAdjacentHTML('beforeend',`<div class="card"><b>Air box connection (MQTT)</b>
+ <div class="row"><input id="mUrl" style="width:100%" value="${mUrl}"></div><div class="row"><input id="mTop" style="flex:1" value="${mTop}"><button id="bConn">Connect</button></div>
+ <div class="mu">Publish JSON like {"temp":26.5,"co2":650,"hum":55,"pm25":12,"power":320} (pm25 and power are optional). The public test broker is for demos only; do not send sensitive data.</div>
+ <div class="row"><span class="mu">Or simulate:</span><select class="sSc">${SIMOPT}</select></div></div>
+ <div class="card"><b>Phone push (ntfy)</b><div class="row"><input id="nTop" style="flex:1" value="${ntopic()}"><button id="bNt">Test push</button></div>
+ <div class="row"><label><input type="checkbox" id="aOn" ${alarmOn?'checked':''}> 🔔 Local alarm sound</label></div>
+ <div class="mu" id="nSt">Install the ntfy app and subscribe to this topic. Treat the topic name like a password. Only alert text is sent, never the model or raw data.</div></div>
+ <div class="card"><div class="vals"><div>🌡<b id="vT">--</b>°C</div><div>💨<b id="vC">--</b>ppm</div><div>💧<b id="vH">--</b>%</div></div>
+ <canvas class="sp" id="spT" width="300" height="46"></canvas><canvas class="sp" id="spC" width="300" height="46"></canvas><div class="mu">Status: <span id="stx"></span></div></div>
+ <div class="card"><b>Events</b><div class="mu" id="evl">No events yet</div></div>
+ <div class="mu">Thresholds (demo values): CO₂ ≥1000 ppm notice, ≥2000 ppm alert (usually poor ventilation, not fire). Temperature ≥40 °C notice; ≥57 °C, a rise of ≥8 °C in 1 min, or ≥45 °C with CO₂ climbing fast counts as possible fire. Humidity ≥75% notice. No data for 20 s means offline. Red alerts sound the alarm and push to your phone; notices push quietly, at most once per 10 minutes per type.</div>`);
+ $('#bConn').onclick=()=>{unlock();mUrl=$('#mUrl').value.trim();mTop=$('#mTop').value.trim();connect()};
+ $('#bNt').onclick=()=>{unlock();push('Home Guardian test','This is a test notification.',3,'white_check_mark')};
+ $('#nTop').onchange=e=>{try{localStorage.setItem('hgTopic',e.target.value.trim())}catch{}};$('#aOn').onchange=e=>{alarmOn=e.target.checked;unlock()};wireSim();paintVals()}
+const pmLv=p=>p<15.5?'Good':p<35.5?'Moderate':p<54.5?'Unhealthy for sensitive groups':p<150.5?'Unhealthy':'Very unhealthy';
+function pAir(){$('#p-air').innerHTML=`<div class="card"><b>Indoor air (PM2.5)</b><div class="vals" style="grid-template-columns:1fr 1fr"><div><b id="vP">--</b>µg/m³</div><div><b id="vPl" style="font-size:14px">--</b>level</div></div><canvas class="sp" id="spP" width="300" height="46"></canvas>
+ <div class="mu">Levels follow Taiwan's PM2.5 air quality index: &lt;15.5 good, &lt;35.5 moderate, &lt;54.5 unhealthy for sensitive groups, &lt;150.5 unhealthy. At 35.5 or more you get a notice to close windows and run a purifier.</div></div>
+ <div class="card"><b>Power use</b><div class="vals"><div><b id="vW">--</b>W</div><div><b id="vK">--</b>kWh</div><div><b id="vM">--</b>NT$</div></div><canvas class="sp" id="spW" width="300" height="46"></canvas>
+ <div class="row"><span class="mu">Price (NT$/kWh)</span><input id="rIn" type="number" step="0.1" value="${rate}" style="width:70px"><button id="kRs">Reset total</button></div>
+ <div class="mu">The total is integrated from power readings since you connected. Cost is a rough estimate (Taiwan uses tiered rates). At 1500 W or more you get a notice: a typical 110 V / 15 A outlet circuit tops out near 1650 W.</div></div>
+ <div class="card"><div class="row"><span class="mu">Simulate:</span><select class="sSc">${SIMOPT}</select></div><div class="mu">Data comes from the air box and a smart plug over MQTT (fields pm25 and power). Set up the connection in the Fire tab.</div></div>`;
+ wireSim();$('#rIn').onchange=e=>{rate=+e.target.value||0;paintAir()};$('#kRs').onclick=()=>{kwh=0;paintAir()};paintAir()}
+function paintAir(){if(!$('#vP'))return;const r=hist[hist.length-1]||{},f=(v,n)=>v==null||isNaN(v)?'--':v.toFixed(n);
+ $('#vP').textContent=f(r.P,0);$('#vPl').textContent=r.P==null||isNaN(r.P)?'--':pmLv(r.P);$('#vW').textContent=f(r.W,0);$('#vK').textContent=f(kwh,3);$('#vM').textContent=f(kwh*rate,2);
+ spark('#spP','P',0,100,'#7c3aed');spark('#spW','W',0,2100,'#b45309')}
+document.addEventListener('click',unlock);
+/* ================= i18n: EN / 中文 (text-node translator with phrase dictionary) ================= */
+const DICT=`Load demo living room=>載入範例客廳
+Import scan (.json)=>匯入掃描 (.json)
+No scan loaded=>尚未匯入掃描
+Scan imported=>已匯入掃描
+Demo room=>範例客廳
+ walls, => 面牆、
+ windows, => 扇窗、
+ objects, ceiling => 件物件，天花板高 
+Could not parse that JSON file.=>無法解析此 JSON 檔。
+The scan has no walls or objects.=>掃描檔中沒有牆或物件。
+Supplementary alerts only: this does not replace certified smoke or fire alarms. Thresholds are demo reference values. Scans and models stay on this device.=>僅為輔助提醒，不能取代合格的火警偵測器與消防設備；門檻為示範參考值；掃描與模型只留在本機。
+Objects=>物件
+Typhoon=>颱風
+Fire=>失火
+Air/Power=>空品/用電
+Cooling=>降溫節能
+Wall=>牆
+Door=>門
+Window=>窗戶
+Opening=>開口
+Sofa=>沙發
+Chair=>椅子
+Table=>桌子
+Bed=>床
+Cabinet=>櫃子
+Fridge=>冰箱
+Stove=>爐具
+Oven=>烤箱
+Sink=>水槽
+Dishwasher=>洗碗機
+Washer/dryer=>洗衣機
+Toilet=>馬桶
+Bathtub=>浴缸
+TV=>電視
+Fireplace=>壁爐
+Stairs=>樓梯
+Heater=>電暖器
+Other=>其他
+Types come from the scan. If one is wrong, select it (tap it in 3D or in the list) and change it. Sizes are in meters.=>類型來自掃描結果。若辨識錯誤，請選取它（點 3D 物件或清單）後修改。尺寸單位為公尺。
+from scan=>來自掃描
+edited=>已修改
+Rotate 90°=>旋轉 90°
+Delete=>刪除
+Add to room=>加入房間
+Nothing yet. Import a scan or load the demo room.=>尚無資料。請匯入掃描或載入範例房間。
+No windows found. Import a scan, or change a misdetected item to “Window” in Objects.=>沒有偵測到窗戶。請匯入掃描，或在「物件」分頁把辨識錯誤的項目改為「窗戶」。
+Typhoon prep=>颱風防護
+windows, largest first.=>扇窗，由大到小排序。
+window, largest first.=>扇窗，由大到小排序。
+Bring in balcony and outdoor items (plants, drying racks).=>先收起陽台與戶外物品（盆栽、曬衣架）。
+Close and lock every window; draw curtains or blinds.=>關緊並鎖好每一扇窗，拉上窗簾或百葉窗。
+doors: place a flood barrier or sandbags along the bottom.=>扇門：門縫底部放置擋水板或沙包。
+door: place a flood barrier or sandbags along the bottom.=>扇門：門縫底部放置擋水板或沙包。
+Large door=>大型門
+Large opening=>大型開口
+Check=>需確認
+If this is a glass or sliding door, treat it as the highest-risk opening: board it up like a large window.=>若這是玻璃門或落地拉門，請視為風險最高的開口，比照大窗以板材封住。
+High risk: large glass=>高風險：大面積玻璃
+Standard=>一般
+, sill =>，窗台高 
+, area =>，面積 
+Fit a storm board about =>裝上防颱板，約 
+ m, fixed to the frame.=> m，固定於窗框。
+Tape an asterisk pattern (two diagonals, a vertical and a horizontal): about =>貼米字膠帶（兩條對角線加一橫一直）：約 
+ m of tape, plus => m 膠帶，另加 
+ m around the frame edges. The 3D view shows the pattern.=> m 貼於窗框邊緣。3D 畫面顯示貼法。
+Seal frame gaps with waterproof tape to reduce leaks.=>用防水膠帶封住窗框縫隙以減少滲水。
+Move items within 1.5 m of the glass: =>移開玻璃 1.5 m 內的物品：
+Tape only limits flying glass; it does not strengthen the pane. Advice is general: floor level, window type and wind direction are not considered.=>膠帶只能減少玻璃碎片飛散，無法增加玻璃強度。建議為通用性質，未考慮樓層、窗型與風向。
+Requirements=>需求
+Air box (temperature, CO₂, humidity): 1 per room=>空氣盒（溫度、CO₂、濕度）：每個房間 1 個
+Certified ceiling smoke alarm (recommended): the air box supplements it, never replaces it=>建議加裝合格的天花板煙霧警報器：空氣盒只是輔助，不能取代
+Live data: connect the air box below (MQTT) or use the simulator.=>即時數據：請在下方連接空氣盒（MQTT）或使用模擬器。
+Where to place the air box=>空氣盒放置位置
+manual=>手動
+On the wall at about =>裝在牆面約 
+ m height (breathing zone).=> m 高處（呼吸高度）。
+Nearest window: =>最近的窗：
+Nearest door: =>最近的門：
+none in room=>房間內沒有
+Nearest heat source (=>最近的熱源（
+No heat source detected; the middle of a wall works.=>未偵測到熱源，裝在牆面中段即可。
+No spot met every clearance (0.8 m from windows and doors, 1.5 m from heat sources). This is the best compromise; consider moving furniture.=>找不到符合所有距離條件的位置（離窗門 0.8 m、離熱源 1.5 m）。這是最佳折衷，建議考慮移動家具。
+Choose a spot manually=>手動指定位置
+Tap the floor…=>請點地板…
+Heat rises, so smoke and heat reach the ceiling first. That is why a ceiling smoke alarm is also recommended.=>熱空氣上升，煙和熱會先到達天花板，所以也建議加裝天花板煙霧警報器。
+Import a scan or load the demo room first.=>請先匯入掃描或載入範例房間。
+Air box connection (MQTT)=>空氣盒連線（MQTT）
+Connected ✓=>已連線 ✓
+Connection failed=>連線失敗
+Connect=>連線
+Publish JSON like =>請發布 JSON，例如 
+ (pm25 and power are optional). The public test broker is for demos only; do not send sensitive data.=>（pm25、power 可省略）。公開測試 broker 僅供展示，請勿傳送敏感資料。
+Or simulate:=>或使用模擬：
+Off=>關閉
+Normal=>正常
+Stuffy (CO₂ rising)=>悶（CO₂ 上升）
+Possible fire (fast heating)=>疑似火災（快速升溫）
+Pollution (PM2.5 rising)=>空污（PM2.5 上升）
+Power overload=>用電過載
+Phone push (ntfy)=>手機推播 (ntfy)
+Test push=>測試推播
+🔔 Local alarm sound=>🔔 本機警報聲
+Install the ntfy app and subscribe to this topic. Treat the topic name like a password. Only alert text is sent, never the model or raw data.=>請安裝 ntfy App 並訂閱此主題。主題名稱等同密碼。只會送出警報文字，不含模型或原始數據。
+Sent =>已送出 
+Push failed (check network)=>推播失敗（請檢查網路）
+Push failed: =>推播失敗：
+Status: =>狀態：
+No data yet=>尚無資料
+Offline=>離線
+Notice=>注意
+ALERT=>警報
+Events=>事件紀錄
+No events yet=>尚無事件
+Back to normal=>恢復正常
+Thresholds (demo values): CO₂ ≥1000 ppm notice, ≥2000 ppm alert (usually poor ventilation, not fire). Temperature ≥40 °C notice; ≥57 °C, a rise of ≥8 °C in 1 min, or ≥45 °C with CO₂ climbing fast counts as possible fire. Humidity ≥75% notice. No data for 20 s means offline. Red alerts sound the alarm and push to your phone; notices push quietly, at most once per 10 minutes per type.=>門檻（示範值）：CO₂ ≥1000 ppm 為注意，≥2000 ppm 為警報（多半是通風不良，而非火災）。溫度 ≥40 °C 為注意；≥57 °C、1 分鐘內升溫 ≥8 °C，或 ≥45 °C 且 CO₂ 快速上升，視為疑似火災。濕度 ≥75% 為注意。20 秒沒有資料視為離線。紅色警報會響警報聲並推播到手機；注意等級只靜音推播，同類型 10 分鐘最多一次。
+🔥 Possible fire! Temperature is rising abnormally. Check the room now and call 119.=>🔥 疑似火災！溫度異常上升，請立即確認現場並撥打 119。
+CO₂ is very high (=>CO₂ 嚴重偏高（
+ ppm). Open windows and leave the stuffy room.=> ppm）。請開窗並離開悶閉空間。
+CO₂ is high (=>CO₂ 偏高（
+ ppm). Open a window to ventilate.=> ppm）。請開窗通風。
+Room is hot (=>室溫偏高（
+ °C). Check for heat sources.=> °C）。請確認是否有熱源。
+Humidity is high (=>濕度偏高（
+%). Consider dehumidifying.=>%）。建議除濕。
+PM2.5 is high (=>PM2.5 偏高（
+ µg/m³). Close windows and run an air purifier.=> µg/m³）。請關窗並開空氣清淨機。
+Power draw is high (=>用電量偏高（
+ W), near a typical outlet circuit limit (about 1650 W). Reduce heavy appliances.=> W），已接近一般插座迴路上限（約 1650 W），請減少同時使用的大功率電器。
+⚠ Air box offline for over 20 s: nothing is being monitored. Check power and network.=>⚠ 空氣盒離線超過 20 秒，目前沒有監測，請檢查電源與網路。
+Air box offline for over 20 s. Nothing is being monitored.=>空氣盒離線超過 20 秒，目前沒有監測。
+Air box offline=>空氣盒離線
+Home Guardian ALERT=>居家守護警報
+Home Guardian notice=>居家守護提醒
+Home Guardian test=>居家守護測試
+Home Guardian=>居家守護
+All issues cleared.=>所有異常已恢復正常。
+This is a test notification.=>這是一則測試通知。
+Indoor air (PM2.5)=>室內空氣（PM2.5）
+level=>等級
+Good=>良好
+Moderate=>普通
+Unhealthy for sensitive groups=>對敏感族群不健康
+Very unhealthy=>非常不健康
+Unhealthy=>不健康
+Levels follow Taiwan's PM2.5 air quality index: <15.5 good, <35.5 moderate, <54.5 unhealthy for sensitive groups, <150.5 unhealthy. At 35.5 or more you get a notice to close windows and run a purifier.=>分級參考臺灣 PM2.5 空氣品質指標：<15.5 良好、<35.5 普通、<54.5 對敏感族群不健康、<150.5 不健康。達 35.5 以上會提醒關窗並開空氣清淨機。
+Power use=>用電量
+Price (NT$/kWh)=>電價（NT$/度）
+Reset total=>累計歸零
+The total is integrated from power readings since you connected. Cost is a rough estimate (Taiwan uses tiered rates). At 1500 W or more you get a notice: a typical 110 V / 15 A outlet circuit tops out near 1650 W.=>累計值是連線後由功率讀數積分而來。電費為粗略估算（台電為累進電價）。功率達 1500 W 以上會提醒：一般 110 V / 15 A 插座迴路上限約 1650 W。
+Simulate:=>模擬：
+Data comes from the air box and a smart plug over MQTT (fields pm25 and power). Set up the connection in the Fire tab.=>數據來自空氣盒與智慧插座（MQTT，欄位 pm25、power）。請在「失火」分頁設定連線。`.split('\n').map(l=>{const i=l.indexOf('=>');return[l.slice(0,i),l.slice(i+2)]}).filter(p=>p[0]&&p[1]!==undefined).sort((a,b)=>b[0].length-a[0].length);
+let lang='en';try{lang=localStorage.getItem('hgLang')||'en'}catch{}
+const tr=t=>lang==='zh'?DICT.reduce((x,[e,z])=>x.split(e).join(z),t):t,Z=(e,z)=>lang==='zh'?z:e;
+let busy=false;
+function xl(root){busy=true;const w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);let n;
+ while(n=w.nextNode()){if(!(n.__t!==undefined&&n.nodeValue===n.__t))n.__o=n.nodeValue;const v=lang==='zh'?tr(n.__o):n.__o;n.__t=v;if(n.nodeValue!==v)n.nodeValue=v}
+ obs.takeRecords();busy=false}
+const obs=new MutationObserver(()=>{if(!busy)xl(document.body)});obs.observe(document.body,{childList:true,subtree:true,characterData:true});
+function setLang(l){lang=l;try{localStorage.setItem('hgLang',l)}catch{}document.documentElement.lang=l==='zh'?'zh-Hant':'en';
+ $('#bLang').textContent=l==='zh'?'English':'中文';refresh();xl(document.body)}
+$('#bLang').onclick=()=>setLang(lang==='zh'?'en':'zh');
+
+/* ================= DLC: Cooling (west-sun window gain + AC / fan placement) ================= */
+/* [en, zh, SHGC, VLT]: illustrative system values, edit them to match real products */
+const OPTS={none:['No shading (clear glass)','無遮陽（透明玻璃）',.85,.88],ext:['Exterior shade (louver / awning / mesh)','外遮陽（外百葉／遮陽簾／網）',.21,.30],
+ int:['Interior reflective shade (full cover)','內遮陽（完整覆蓋、外側高反射）',.51,.18],film:['Window film (mid-grade)','建築隔熱膜（中等）',.45,.50]};
+/* West-facing vertical irradiance, W/m², 08:00-21:00. Illustrative clear summer day, NOT measured Taipei hourly data: replace with CWA data. */
+const IRR=[40,50,60,70,80,120,250,420,540,520,300,80,0,0],SUM=IRR.reduce((a,b)=>a+b),PM=IRR.slice(4,10).reduce((a,b)=>a+b);
+let cool={opt:'none',shgc:.85,vlt:.88,cop:3,ppl:6,inl:500,dT:1,pct:6,fanW:40,west:{},ac:null,fan:null};
+const westWins=()=>of('window').filter(w=>cool.west[w.id]!==false);
+function calc(o,fan){const A=westWins().reduce((a,w)=>a+w.dim[0]*w.dim[1],0),sol=A*o[2]*SUM/1000,th=sol+(cool.inl+cool.ppl*75)*14/1000;
+ let e=th/cool.cop;if(fan)e=e*(1-cool.pct/100*cool.dT)+cool.fanW*14/1000;return{sol,e,cost:e*rate}}
+function placeCool(){const ws=of('wall'),seats=items.filter(i=>['chair','sofa','bed'].includes(i.type)),O=items.filter(i=>!isS(i.type)),Wn=of('window');cool.ac=cool.fan=null;
+ if(!ws.length||!seats.length)return;const cx=ws.reduce((a,w)=>a+w.x,0)/ws.length,cz=ws.reduce((a,w)=>a+w.z,0)/ws.length;let best=null;
+ for(const w of ws){let nx=Math.sin(w.rot),nz=Math.cos(w.rot);if((cx-w.x)*nx+(cz-w.z)*nz<0){nx=-nx;nz=-nz}
+  for(let s=-w.dim[0]/2+.6;s<=w.dim[0]/2-.6;s+=.5){const p={x:w.x+Math.cos(w.rot)*s+nx*.15,z:w.z-Math.sin(w.rot)*s+nz*.15};
+   if(Wn.length&&near(p,Wn)<.6)continue;
+   const ds=seats.map(t=>Math.hypot(t.x-p.x,t.z-p.z)),bl=seats.filter(t=>{for(let k=.1;k<.95;k+=.1){const q={x:p.x+(t.x-p.x)*k,z:p.z+(t.z-p.z)*k};
+     if(O.some(o=>o!==t&&o.dim[1]>=1.2&&rectDist(q,o)<.05))return true}return false}).length;
+   const mean=ds.reduce((a,b)=>a+b)/ds.length,mx=Math.max(...ds),sc_=-mean-.5*mx-3*bl;
+   if(!best||sc_>best.sc)best={sc:sc_,x:p.x,z:p.z,y:Math.min(2.5,room.ceil-.3),nx,nz,rot:w.rot,mean,mx,bl,n:seats.length}}}
+ cool.ac=best;if(!best)return;
+ const far=seats.reduce((a,t)=>Math.hypot(t.x-best.x,t.z-best.z)>Math.hypot(a.x-best.x,a.z-best.z)?t:a),L=Math.hypot(far.x-best.x,far.z-best.z)||1,
+  T={x:far.x+(best.x-far.x)/L*1.6,z:far.z+(best.z-far.z)/L*1.6};let f=null;
+ for(let x=-room.ext/2;x<=room.ext/2;x+=.25)for(let z=-room.ext/2;z<=room.ext/2;z+=.25){const p={x,z};
+  if(O.some(o=>rectDist(p,o)<.5)||(near(p,ws)??9)<.4||!inside(p,ws))continue;const d=Math.hypot(x-T.x,z-T.z);if(!f||d<f.d)f={x,z,d,tx:far.x,tz:far.z}}
+ cool.fan=f}
+const inside=(p,ws)=>{const xs=ws.map(w=>w.x),zs=ws.map(w=>w.z);return p.x>Math.min(...xs)&&p.x<Math.max(...xs)&&p.z>Math.min(...zs)&&p.z<Math.max(...zs)};
+function coolOv(){westWins().forEach(w=>{const a=w.dim[0]/2,b=w.dim[1]/2,p=[[-a,-b],[a,-b],[a,-b],[a,b],[a,b],[-a,b],[-a,b],[-a,-b]].map(([x,y])=>new THREE.Vector3(x,y,.06)),
+  l=new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(p),new THREE.LineBasicMaterial({color:0xe37400}));l.position.set(w.x,w.y,w.z);l.rotation.y=w.rot;ov.add(l)});
+ const a=cool.ac,f=cool.fan,V=(x,y,z)=>new THREE.Vector3(x,y,z),ln=(p,c)=>new THREE.Line(new THREE.BufferGeometry().setFromPoints(p),new THREE.LineBasicMaterial({color:c}));
+ if(a){const m=new THREE.Mesh(new THREE.BoxGeometry(.9,.3,.25),new THREE.MeshBasicMaterial({color:0x1a73e8}));m.position.set(a.x,a.y,a.z);m.rotation.y=a.rot;ov.add(m,ln([V(a.x,a.y,a.z),V(a.x+a.nx*2.5,a.y-.7,a.z+a.nz*2.5)],0x1a73e8))}
+ if(f){const c=new THREE.Mesh(new THREE.CylinderGeometry(.18,.18,.5,16),new THREE.MeshBasicMaterial({color:0x188038})),r=new THREE.Mesh(new THREE.RingGeometry(.48,.5,32),new THREE.MeshBasicMaterial({color:0x188038,side:THREE.DoubleSide}));
+  c.position.set(f.x,.35,f.z);r.rotation.x=-Math.PI/2;r.position.set(f.x,.02,f.z);ov.add(c,r,ln([V(f.x,.8,f.z),V(f.tx,.8,f.tz)],0x188038))}}
+function pCool(){placeCool();const W=of('window');
+ if(!W.length){$('#p-cool').innerHTML=`<div class="card">${Z('No windows found. Import a scan or load the demo room first.','沒有偵測到窗戶。請先匯入掃描或載入範例房間。')}</div>`;return}
+ const o=OPTS[cool.opt],so=['','',cool.shgc,cool.vlt],A=westWins().reduce((a,w)=>a+w.dim[0]*w.dim[1],0),n0=OPTS.none,
+  R=[['A',Z('Baseline: no shade, no fan','基準：無遮陽、無風扇'),calc(n0,0)],['B',Z('Shading only','僅遮陽'),calc(so,0)],['C',Z(`Fan only (+${cool.dT} °C)`,`僅風扇（+${cool.dT} °C）`),calc(n0,1)],['D',Z('Shading + fan','遮陽＋風扇'),calc(so,1)]],a=R[0][2].e,
+  aft0=A*n0[2]*PM/1000,aft1=A*so[2]*PM/1000,ac=cool.ac,fn=cool.fan,inp=([k,e,z,st])=>`<label class="mu">${Z(e,z)}<input type="number" step="${st}" data-k="${k}" value="${cool[k]}" style="width:66px"></label>`;
+ $('#p-cool').innerHTML=`<div class="card"><b>${Z('1. Window sun gain (west)','1. 西曬窗日射得熱')}</b>
+ <div class="mu">${Z('The scan has no compass. Tick the windows that face west.','掃描沒有方位資訊，請勾選朝西的窗戶。')}</div>
+ ${W.map((w,k)=>`<div><label><input type="checkbox" data-w="${w.id}" ${cool.west[w.id]!==false?'checked':''}> ${Z('Window','窗')} ${k+1}: ${r2(w.dim[0])}×${r2(w.dim[1])} m</label></div>`).join('')}
+ <div class="mu">${Z('West glass area','西曬玻璃面積')}: ${r2(A)} m²</div>
+ <div class="row"><select id="cOpt">${Object.keys(OPTS).map(k=>`<option value="${k}" ${k===cool.opt?'selected':''}>${Z(OPTS[k][0],OPTS[k][1])}</option>`).join('')}</select></div>
+ <div class="row">${inp(['shgc','SHGC','SHGC',.01])}${inp(['vlt','VLT','可見光穿透率 VLT',.01])}</div>
+ <ul><li>${Z('Afternoon (12-18h) solar gain','午後（12–18 時）日射得熱')}: ${r2(aft0)} → ${r2(aft1)} kWh (${aft0?'-'+Math.round((1-aft1/aft0)*100):0}%)</li>
+ <li>${Z('Daylight (VLT) change','採光（可見光）變化')}: -${Math.round((1-cool.vlt/n0[3])*100)}%</li>
+ <li>${Z('Cooling electricity change (shading only)','冷房耗電變化（僅遮陽）')}: ${r2(R[1][2].e-a)} kWh/${Z('day','日')}</li></ul>
+ <div class="mu">${Z('SHGC (solar heat gain) is not the same as light blocking. Use the whole glass-plus-shade value, not a shading rate or UV rate.','以整體玻璃＋遮陽的 SHGC（太陽熱取得係數）計算；遮光率或抗 UV 率不等於隔熱率。')}</div></div>
+ <div class="card"><b>${Z('2. Scenarios A/B/C/D (per day, 08-22h)','2. 情境 A/B/C/D（每日 08–22 時）')}</b>
+ <div class="row">${inp(['ppl','People','人數',1])}${inp(['inl','Internal W','內熱 W',50])}${inp(['cop','COP','COP',.1])}</div><div class="row">${inp(['dT','Setpoint +°C','設定溫度調高 °C',1])}${inp(['pct','Saving %/°C','每 °C 省電 %',1])}${inp(['fanW','Fan W','風扇 W',5])}</div>
+ <table class="ct"><tr><th></th><th>${Z('Solar kWh','日射 kWh')}</th><th>${Z('Elec kWh','耗電 kWh')}</th><th>NT$</th><th>${Z('Saving','節省')}</th></tr>
+ ${R.map(([k,nm,c])=>`<tr><td title="${nm}">${k} ${nm}</td><td>${r2(c.sol)}</td><td>${r2(c.e)}</td><td>${r1(c.cost)}</td><td>${k==='A'?'-':(a-c.e>=0?'':'+')+r1((c.e-a)/a*100).replace('-','−')+'%'}</td></tr>`).join('')}</table>
+ <div class="mu">${Z('Fan saving = AC electricity saved by the higher setpoint, minus the fan\'s own electricity. Rough model: solar gain plus people (75 W each) and internal load, divided by COP. Wall conduction, latent load and cloud are ignored, and one uniform-temperature model cannot tell you savings from moving the AC.','風扇節電＝冷氣調高設定溫度省下的電，減去風扇本身耗電。為粗略模型：日射＋人體（每人 75 W）＋內熱，除以 COP；未含牆體傳導、潛熱與雲量，且單一均勻溫度模型無法估算「移動冷氣位置」的節電。')}</div></div>
+ <div class="card"><b>${Z('3. AC and fan placement','3. 冷氣與風扇位置')}</b>${ac?`<ul>
+ <li>${Z('AC on the wall (blue) at','冷氣裝在牆面（藍色），離地')} ${r1(ac.y)} m, ${Z('blowing into the room','朝室內吹')}.</li>
+ <li>${Z('Distance to seats','到座位的距離')}: ${Z('average','平均')} ${r1(ac.mean)} m, ${Z('farthest','最遠')} ${r1(ac.mx)} m (${ac.n} ${Z('seats','個座位')}).</li>
+ <li>${ac.bl?`${ac.bl}/${ac.n} ${Z('seats have a tall item in the airflow path.','個座位的氣流路徑被高家具擋住。')}`:Z('No tall item blocks the airflow path to any seat.','氣流路徑沒有被高家具遮擋。')}</li>
+ ${ac.mx>6?`<li>⚠ ${Z('Farthest seat is over 6 m away: one wall unit may not cool enough. Consider zoning.','最遠座位超過 6 m：單台壁掛式冷氣可能冷房能力不足，建議評估分區配置。')}</li>`:''}
+ ${fn?`<li>${Z('Fan (green) near the far seats; keep the ring (0.5 m) clear for chairs and walking. Low-to-medium speed, oscillating, avoid blowing straight at people.','風扇（綠色）放在遠端座位附近；圓環（0.5 m）內請保持淨空以免擋住椅子與走道。低至中風速、擺頭，避免長時間直吹人體。')}</li>`:`<li>${Z('No free floor spot found for a fan.','找不到適合放風扇的空地。')}</li>`}</ul>`:`<div class="mu">${Z('Add chairs, sofas or beds (Objects tab) to check airflow paths.','請在「物件」分頁加入椅子、沙發或床，才能檢查氣流路徑。')}</div>`}</div>
+ <div class="mu">${Z('Prototype scope: window solar gain and AC/fan geometry are in. Not yet: zoned heat-load model, measured hourly weather, real equipment data.','原型範圍：已含窗戶日射得熱與冷氣／風扇幾何檢查。尚未含：熱負荷分區模型、實際逐時氣象、設備性能資料。')}</div>`;
+ $('#cOpt').onchange=e=>{cool.opt=e.target.value;cool.shgc=OPTS[cool.opt][2];cool.vlt=OPTS[cool.opt][3];pCool()};
+ document.querySelectorAll('#p-cool [data-k]').forEach(i=>i.onchange=()=>{cool[i.dataset.k]=+i.value;pCool()});
+ document.querySelectorAll('#p-cool [data-w]').forEach(i=>i.onchange=()=>{cool.west[i.dataset.w]=i.checked;pCool();drawOv()});drawOv()}
+
+/* ================= Score overview: Safety / Energy / Pests ================= */
+let done={},alertMode=false;
+const FLAM=['sofa','bed','storage','chair','table'],KIT=['sink','stove','oven','dishwasher','refrigerator'],DN=()=>({safe:Z('Safety','安全'),energy:Z('Energy','節能'),pest:Z('Pests','害蟲/生物')});
+function checks(){const C=[],L=(dim,id,en,zh,max,lost,why,tab,st,cd)=>C.push({dim,id,n:Z(en,zh),max,lost:done[id]?0:Math.max(0,Math.min(max,lost)),why,tab,st:st||'ok',cd});
+ const W=of('window'),O=items.filter(i=>!isS(i.type)),H=heats(),has=!!lastSeen,live=has&&Date.now()-lastSeen<=20000,r=hist[hist.length-1]||{},k=alertMode?1:.4,ws=of('wall');
+ if(W.length){const big=W.filter(w=>w.dim[0]*w.dim[1]>=1.5||w.dim[1]>=1.8).length,sm=W.length-big;
+  L('safe','ty','Typhoon: window prep','颱風：窗戶防護',25,(6*big+2*sm)*k,Z(`${big} large-glass and ${sm} standard windows${alertMode?' (typhoon warning active)':', not yet secured'}`,`${big} 扇大面積玻璃、${sm} 扇一般窗${alertMode?'（颱風警報中）':'，尚未加固'}`),'ty',0,1);
+  const nb=O.filter(o=>!HEAT.includes(o.type)&&W.some(w=>rectDist(w,o)<1.5)).length;
+  L('safe','nw','Typhoon: items near glass','颱風：窗邊物品',5,nb*2*k,Z(`${nb} item(s) within 1.5 m of a window`,`${nb} 件物品在窗邊 1.5 m 內`),'ty',0,1)}
+ let hp=0;H.forEach(h=>O.filter(f=>FLAM.includes(f.type)).forEach(f=>{if(rectDist(h,f)-Math.max(h.dim[0],h.dim[2])/2<1)hp++}));
+ if(H.length)L('safe','hc','Fire: heat source near furniture','火災：熱源靠近家具',20,hp*8,Z(`${hp} heat-source/furniture pair(s) closer than 1 m (flammables inferred from furniture type)`,`${hp} 組熱源與家具距離不到 1 m（易燃物由家具類型推測）`),'obj',0,1);
+ L('safe','box','Air box online','空氣盒連線',20,has&&!live?10:0,has?(live?Z('Online','連線中'):Z('Offline: nothing is being monitored','離線：目前沒有監測')):Z('No data yet: connect it in the Fire tab','尚無資料：請在「失火」分頁連線'),'fire',has?0:'unk');
+ let x=0;if(has){if(act.fire)x+=25;if(act.co2)x+=act.co2[0]===2?15:5;if(r.P>=54.5)x+=12;else if(r.P>=35.5)x+=6;if(act.temp)x+=5;if(act.pwr)x+=8}
+ L('safe','live','Live fire and air quality','即時火災與空氣品質',25,x,has?Z(x?'Active alerts: see the banner':'No active alerts','有警示：請看上方警示條'.replace('有警示：請看上方警示條',x?'有警示：請看上方警示條':'目前沒有警示')):Z('No sensor data','沒有感測資料'),'fire',has?0:'unk');
+ const fo=!!done.fan,so=['','',cool.shgc,cool.vlt],base=calc(OPTS.none,0).e,cur=calc(so,fo),pa=Math.max(0,cur.e-calc(OPTS.ext,fo).e),pb=fo?0:Math.max(0,calc(so,0).e-calc(so,1).e),f=v=>100*v/base;
+ L('energy','sh','West-sun shading','西曬遮陽',60,f(pa),Z(`Best shading could save about ${r2(pa)} kWh/day (NT$ ${r1(pa*rate)})`,`最佳遮陽每日約可省 ${r2(pa)} 度（NT$ ${r1(pa*rate)}）`),'cool');
+ L('energy','fan','Fan + higher setpoint','風扇＋調高設定溫度',20,f(pb),Z(`Net saving about ${r2(pb)} kWh/day after the fan's own power. Tick done if you already do this`,`扣掉風扇耗電後每日約省 ${r2(pb)} 度；若已在做請標記完成`),'cool',0,1);
+ placeCool();if(cool.ac)L('energy','af','AC airflow path','冷氣氣流路徑',10,10*cool.ac.bl/cool.ac.n,Z(`${cool.ac.bl}/${cool.ac.n} seats blocked by tall furniture`,`${cool.ac.bl}/${cool.ac.n} 個座位被高家具擋住`),'cool');
+ L('energy','pw','Live power draw','即時用電',10,r.W>=1500?10:0,has?Z(r.W>=1500?'Near the outlet circuit limit':'Within normal range','已接近插座迴路上限'.replace('已接近插座迴路上限',r.W>=1500?'已接近插座迴路上限':'在正常範圍')):Z('No power data','沒有用電資料'),'air',has?0:'unk');
+ if(ws.length){let g=0;O.filter(o=>o.dim[1]>=.5).forEach(o=>{const c=Math.cos(o.rot),s=Math.sin(o.rot),hx=o.dim[0]/2,hz=o.dim[2]/2;
+   [[hx+.01,0],[-hx-.01,0],[0,hz+.01],[0,-hz-.01]].forEach(([lx,lz])=>{const d=near({x:o.x+lx*c+lz*s,z:o.z-lx*s+lz*c},ws);if(d>.03&&d<.25)g++})});
+  L('pest','gap','Narrow gaps by furniture','家具旁狹縫',30,g*6,Z(`${g} gap(s) of 3-25 cm between furniture and walls: dark, hard to clean`,`${g} 處家具與牆之間有 3–25 公分縫隙：陰暗、不易清潔`),'obj',0,1)}
+ const kt=O.filter(o=>KIT.includes(o.type)),en=of('door').concat(of('opening')),ke=kt.filter(o=>en.some(e=>rectDist(o,e)<2)).length;
+ if(kt.length)L('pest','ent','Food area near an entrance','廚房區靠近出入口',8,ke?8:0,Z(`${ke} kitchen item(s) within 2 m of a door or opening`,`${ke} 件廚房設備離門／開口不到 2 m`),'obj',0,1);
+ L('pest','hum','Humidity','濕度',15,r.H>=75?15:0,has?Z(r.H>=75?'Damp air attracts pests and mold':'Humidity is fine','濕氣容易吸引害蟲與黴菌'.replace('濕氣容易吸引害蟲與黴菌',r.H>=75?'濕氣容易吸引害蟲與黴菌':'濕度正常')):Z('No humidity data','沒有濕度資料'),'fire',has?0:'unk');
+ L('pest','ps','Pest sensor','害蟲感測器',0,0,Z('None connected: this score shows risk conditions, not detection','尚未連接：此分數只反映環境誘因，並非偵測'),'','unk');
+ return C}
+function dimScore(d,C){const a=C.filter(c=>c.dim===d&&c.st!=='unk'&&c.max>0),p=a.reduce((s,c)=>s+c.max,0);return p?{pct:Math.round(100*(1-a.reduce((s,c)=>s+c.lost,0)/p)),n:a.length,tot:C.filter(c=>c.dim===d&&c.max>0).length}:null}
+function pScore(){if(!items.length){$('#p-score').innerHTML=`<div class="card">${Z('Load a scan or the demo room to see your score.','請先匯入掃描或載入範例房間，才會顯示分數。')}</div>`;return}
+ const C=checks(),D={safe:dimScore('safe',C),energy:dimScore('energy',C),pest:dimScore('pest',C)},av=Object.values(D).filter(Boolean).map(d=>d.pct),all=av.length?Math.min(...av):null,nm=DN(),
+ col=p=>p==null?'#9aa0a6':p>=80?'#188038':p>=60?'#e37400':'#d93025',
+ dn=(p,z,lab,sub)=>{const r=z/2-8,cf=2*Math.PI*r;return `<div style="text-align:center"><svg width="${z}" height="${z}"><circle cx="${z/2}" cy="${z/2}" r="${r}" fill="none" stroke="#e8eaed" stroke-width="8"/><circle cx="${z/2}" cy="${z/2}" r="${r}" fill="none" stroke="${col(p)}" stroke-width="8" stroke-linecap="round" stroke-dasharray="${p==null?0:p/100*cf} ${cf}" transform="rotate(-90 ${z/2} ${z/2})"/><text x="50%" y="55%" text-anchor="middle" font-size="${z/4}" font-weight="700" fill="${col(p)}">${p==null?'--':p+'%'}</text></svg><div class="mu"><b>${lab}</b><br>${sub}</div></div>`},
+ low=C.filter(c=>c.lost>0).sort((a,b)=>b.lost-a.lost),dd=C.filter(c=>done[c.id]),un=C.filter(c=>c.st==='unk');
+ $('#p-score').innerHTML=`<div class="card"><div style="display:flex;justify-content:center">${dn(all,150,Z('Home quality','居家環境品質'),Z('lowest area sets the score','取最低的面向'))}</div>
+ <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin-top:6px">${Object.keys(D).map(k=>dn(D[k]?D[k].pct:null,84,nm[k],D[k]?`${D[k].n}/${D[k].tot} ${Z('checks','項有資料')}`:Z('no data','無資料'))).join('')}</div>
+ <div class="row"><label><input type="checkbox" id="aM" ${alertMode?'checked':''}> ${Z('Typhoon warning active (demo switch)','颱風警報中（示範開關）')}</label></div></div>
+ <b>${Z('What to do first','優先處理')}</b>${low.length?low.slice(0,6).map(c=>`<div class="card"><div class="row"><b>${c.n}</b><span class="tag hi">-${Math.round(c.lost)}</span><span class="tag">${nm[c.dim]}</span></div><div class="mu">${c.why}</div>
+ <div class="row"><button data-go="${c.tab}">${Z('Open','前往')}</button>${c.cd?`<button data-d="${c.id}">${Z('Mark done','標記完成')}</button>`:''}</div></div>`).join(''):`<div class="card">${Z('Nothing to fix right now.','目前沒有需要處理的項目。')}</div>`}
+ ${dd.length?`<div class="card"><b>${Z('Done','已完成')}</b>${dd.map(c=>`<div class="row"><span>✓ ${c.n}</span><button data-d="${c.id}">${Z('Undo','復原')}</button></div>`).join('')}</div>`:''}
+ ${un.length?`<div class="card"><b>${Z('Waiting for data (not counted)','等待資料（不計分）')}</b>${un.map(c=>`<div class="mu">• ${c.n}: ${c.why}</div>`).join('')}</div>`:''}
+ <div class="mu">${Z('A guide for what to act on, not a measurement. Weights are adjustable heuristics. Pest checks look at risk conditions only. Not a substitute for certified fire equipment.','此分數是行動提示，不是精確測量；權重為可調整的經驗規則；害蟲項目只看環境誘因；不能取代合格的消防設備。')}</div>`;
+ $('#aM').onchange=e=>{alertMode=e.target.checked;pScore()};
+ document.querySelectorAll('#p-score [data-go]').forEach(b=>b.onclick=()=>{if(b.dataset.go){tab=b.dataset.go;refresh()}});
+ document.querySelectorAll('#p-score [data-d]').forEach(b=>b.onclick=()=>{done[b.dataset.d]=!done[b.dataset.d];pScore()})}
+refresh();
+if(lang==='zh')setLang('zh');
+
+</script></body></html>

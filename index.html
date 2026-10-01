@@ -34,12 +34,12 @@ canvas.sp{width:100%;height:46px;background:#f1f3f4;border-radius:6px;margin-top
 .pe{transform-box:fill-box;transform-origin:50% 100%}.pe.h,.pe.j{animation:bob 1.3s ease-in-out infinite}.pe.j{animation-duration:.8s}.pe.s{transform:translateY(3px) scaleY(.92)}.pe.a{animation:shk .25s linear infinite alternate}.pe.z{opacity:.6}.pe.pat{animation:pat .5s}
 .eye{transform-box:fill-box;transform-origin:center;animation:blink 4s infinite}
 @keyframes bob{50%{transform:translateY(-4px)}}@keyframes pat{50%{transform:scale(1.25)}}@keyframes shk{from{transform:rotate(-3deg)}to{transform:rotate(3deg)}}@keyframes blink{0%,94%,100%{transform:scaleY(1)}97%{transform:scaleY(.1)}}
-header{background:linear-gradient(90deg,#202124,#2b3a55)}aside{background:#f8fafc}
+header{background:#202124}aside{background:#f8fafc}
 .tabs button{color:var(--c);background:#fff;border-color:transparent;box-shadow:0 1px 3px rgba(32,33,36,.18);transition:.15s}.tabs button:hover{background:var(--bg)}.tabs button.on{color:var(--c);background:var(--bg);border-color:var(--c);box-shadow:inset 0 0 0 1px var(--c)}
 #p-air{--c:#0ea5e9}#p-energy{--c:#f59e0b}#p-cool{--c:#3b82f6}#p-inf{--c:#65a30d}#p-fire{--c:#ef4444}#p-ty{--c:#6366f1}#p-out{--c:#ca8a04}
 aside .card{border-left:4px solid var(--c,var(--bd));background:#fff}aside .card>b:first-child{color:var(--c)}
-#obBtn,#obBtn.on{color:#fff;border:none;background:linear-gradient(135deg,#1a73e8,#4f8cff)}#obBtn.on{background:#174ea6}#obBtn svg{display:block;margin:auto}
-#obPop .pophd,#scPop .pophd{margin:0 -10px 4px;padding:9px 12px;border-radius:14px 14px 0 0;background:linear-gradient(90deg,#e8f0fe,#e6f4ea)}
+#obBtn,#obBtn.on{color:#fff;border:none;background:#1a73e8}#obBtn.on{background:#174ea6}#obBtn svg{display:block;margin:auto}
+#obPop .pophd,#scPop .pophd{margin:0 -10px 4px;padding:9px 12px;border-radius:14px 14px 0 0;background:#e8f0fe}
 #scPop{width:390px;max-width:calc(100% - 24px)}.pets{gap:6px}.pet{background:#f8fafc;border:1px solid #eef1f6}.pet.sel{background:#e8f0fe;border-color:#c6dafc}
 .pet[data-pet=safe] b{color:#2563eb}.pet[data-pet=energy] b{color:#d97706}.pet[data-pet=pest] b{color:#15803d}.ci svg{display:block;margin:auto}
 @media(max-width:800px){main{flex-direction:column}aside{width:100%;height:48%;border-left:0;border-top:1px solid var(--bd)}}
@@ -80,11 +80,11 @@ const T={wall:['Wall','#94a3b8','s'],door:['Door','#b45309','s'],window:['Window
 sofa:['Sofa','#3b82f6'],chair:['Chair','#60a5fa'],table:['Table','#a1662f'],bed:['Bed','#6b8cae'],storage:['Cabinet','#78716c'],
 refrigerator:['Fridge','#9ca3af'],stove:['Stove','#c2410c'],oven:['Oven','#c2410c'],sink:['Sink','#a8a29e'],dishwasher:['Dishwasher','#9ca3af'],
 washerDryer:['Washer/dryer','#9ca3af'],toilet:['Toilet','#d1d5db'],bathtub:['Bathtub','#d1d5db'],television:['TV','#1f2937'],
-fireplace:['Fireplace','#c2410c'],stairs:['Stairs','#a3a3a3'],heater:['Heater','#dc2626'],ac:['Air conditioner','#e5e7eb'],fan:['Fan','#9ca3af'],other:['Other','#a3a3a3']};
+fireplace:['Fireplace','#c2410c'],stairs:['Stairs','#a3a3a3'],heater:['Heater','#dc2626'],ac:['Air conditioner','#e5e7eb'],fan:['Fan','#9ca3af'],cfan:['Ceiling fan','#9ca3af'],other:['Other','#a3a3a3']};
 const HEAT=['stove','oven','fireplace','heater'],isS=t=>T[t][2]==='s';
 /* Devices: running watts (w), hours per day (h), on/off, plus setpoint (set) and aim in degrees (dir) for AC and fans.
    RoomPlan finds fridges, ovens, washers and TVs; AC and fans are added by hand. Your app can drive them through window.setDevice(id,{on,w,dir}). */
-const DEV={ac:{w:900,h:8},fan:{w:40,h:8},refrigerator:{w:45,h:24,on:1},washerDryer:{w:500,h:.5},dishwasher:{w:1200,h:1},oven:{w:2000,h:1},heater:{w:1200,h:4},television:{w:100,h:4}},DEFD={ac:[.9,.3,.25,2.2],fan:[.4,1.2,.4,.6]};
+const DEV={ac:{w:900,h:8},fan:{w:40,h:8},cfan:{w:60,h:8},refrigerator:{w:45,h:24,on:1},washerDryer:{w:500,h:.5},dishwasher:{w:1200,h:1},oven:{w:2000,h:1},heater:{w:1200,h:4},television:{w:100,h:4}},DEFD={ac:[.9,.3,.25,2.2],fan:[.4,1.2,.4,.6],cfan:[1.2,.4,1.2,2.3]};
 function ensureDev(it){const d=DEV[it.type];if(!d){delete it.dev;return}if(!it.dev||it.dev.t!==it.type)it.dev={t:it.type,on:!!d.on,w:d.w,h:d.h,set:26,dir:0,swing:false}}
 window.setDevice=(id,q)=>{const i=items.find(x=>x.id===id);if(i&&i.dev){Object.assign(i.dev,q);sync(i);refresh()}};
 
@@ -95,7 +95,7 @@ const ct=new OrbitControls(cam,rd.domElement);
 sc.add(new THREE.HemisphereLight(0xffffff,0x9aa4b2,1.3));const dl=new THREE.DirectionalLight(0xffffff,.7);dl.position.set(4,8,5);sc.add(dl);
 const world=new THREE.Group(),ov=new THREE.Group();let grid=null;sc.add(world,ov);
 const size=()=>{const w=vp.clientWidth,h=vp.clientHeight;rd.setSize(w,h);cam.aspect=w/h;cam.updateProjectionMatrix()};
-addEventListener('resize',size);size();(function loop(){requestAnimationFrame(loop);ct.update();rd.render(sc,cam)})();
+addEventListener('resize',size);size();(function loop(){requestAnimationFrame(loop);ct.update();if(window.__af)window.__af();rd.render(sc,cam)})();
 
 /* ---- State ---- */
 let items=[],uid=1,sel=null,tab='air',sensor=null,pick=false,room={ceil:2.5,ext:6};
@@ -141,6 +141,7 @@ function model(g,t,sx,sy,sz,col,on){const lr=Math.max(.012,Math.min(sx,sz)*.05),
  else if(t==='stairs'){const n=Math.max(2,Math.round(sy/.18));for(let i=0;i<n;i++)P(g,sx,sy*(i+1)/n,sz/n,col,0,sy*(i+1)/n/2,-sz/2+sz/n*(i+.5))}
  else if(t==='heater'){for(let i=0;i<6;i++)P(g,sx/8,sy*.9,sz,col,-sx*.42+i*sx*.168,sy*.5,0)}
  else if(t==='ac'){P(g,sx,sy,sz,'#f3f4f6',0,sy/2,0);P(g,sx*.9,.02,.02,'#9ca3af',0,sy*.18,sz/2+.005,{ne:1});C(g,.012,.01,on?'#22c55e':'#9ca3af',sx*.4,sy*.7,sz/2+.006,{rx:1})}
+ else if(t==='cfan'){const bc=on?'#38bdf8':'#9ca3af';C(g,.07,sy*.5,'#6b7280',0,sy*.55,0);P(g,sx*.95,.015,.14,bc,0,sy*.3,0,{ne:1});P(g,.14,.015,sz*.95,bc,0,sy*.3,0,{ne:1})}
  else if(t==='fan'){const r=Math.min(sx,sz)*.5;C(g,r*.45,.03,'#374151',0,.015,0);C(g,.02,sy*.7,'#9ca3af',0,sy*.4,0);C(g,r*.9,.08,'#6b7280',0,sy*.85,0,{rx:1});C(g,r,.01,on?'#38bdf8':'#d1d5db',0,sy*.85,.06,{rx:1})}
  else if(t==='window'){const f=Math.max(.02,Math.min(sy,sz)*.08),F='#475569';
   P(g,sx,f,sz,F,0,sy-f/2,0);P(g,sx,f,sz,F,0,f/2,0);P(g,f,sy,sz,F,-sx/2+f/2,sy/2,0);P(g,f,sy,sz,F,sx/2-f/2,sy/2,0);P(g,sx,f*.6,sz,F,0,sy/2,0);P(g,f*.6,sy,sz,F,0,sy/2,0);
@@ -188,7 +189,7 @@ function build(list,label){
  if(grid)sc.remove(grid);grid=new THREE.GridHelper(Math.ceil(room.ext),Math.ceil(room.ext/.3),0x9aa4b2,0xdadce0);sc.add(grid);/* 0.3 m guide cells */
  ct.target.set(0,1,0);cam.position.set(room.ext*.6,room.ext*.55,room.ext*.7);
  $('#st').textContent=`${label}: ${of('wall').length} walls, ${of('window').length} windows, ${items.filter(i=>!isS(i.type)).length} objects, ceiling ${r2(room.ceil)} m`;
- recSensor();refresh();
+ recSensor();refresh();{const bad=items.filter(i=>i.type==='ac'&&near(i,of('wall'))>.6).length;if(bad)$('#st').textContent+=` · Warning: ${bad} marked AC not on a wall; scan and marks may not line up`}
  window.webkit?.messageHandlers?.nativeBridge?.postMessage({type:'scanImported',walls:of('wall').length,objects:items.filter(i=>!isS(i.type)).length})}
 
 /* ---- RoomPlan JSON import: transform may be flat or nested, category a string or {name:{}} ---- */
@@ -196,7 +197,17 @@ const flat=t=>Array.isArray(t[0])?t.flat():t,catName=c=>typeof c==='string'?c:Ob
 function fromRoomPlan(r){const out=[];
  const add=(arr,fixed)=>(arr||[]).forEach(s=>{const t=flat(s.transform);let ty=fixed||catName(s.category);if(!T[ty])ty='other';
   out.push({type:ty,x:t[12],y:t[13],z:t[14],rot:Math.atan2(-t[2],t[0]),dim:s.dimensions||[1,1,1]})});
- add(r.walls,'wall');add(r.doors,'door');add(r.windows,'window');add(r.openings,'opening');add(r.objects);return out}
+ add(r.walls,'wall');add(r.doors,'door');add(r.windows,'window');add(r.openings,'opening');add(r.objects);
+ (r.devices||[]).forEach(d=>{const[px,py,pz]=d.position||[],[nx,,nz]=d.normal||[0,0,1],h=Math.hypot(nx,nz)||1,ux=nx/h,uz=nz/h;
+  if(d.type==='ac'){/* snap to the nearest wall: the tap only has to be close to the AC, not exact */
+   const dm=[(d.size||[.9,.3])[0],(d.size||[.9,.3])[1],.25],WL=out.filter(e=>e.type==='wall');let b=null;
+   if(WL.length){const cx=WL.reduce((a,w)=>a+w.x,0)/WL.length,cz=WL.reduce((a,w)=>a+w.z,0)/WL.length;
+    WL.forEach(w=>{let vx=Math.sin(w.rot),vz=Math.cos(w.rot);const al=Math.abs((px-w.x)*vz-(pz-w.z)*vx),dist=Math.hypot((px-w.x)*vx+(pz-w.z)*vz,Math.max(al-w.dim[0]/2,0));
+     if(!b||dist<b.dist){if((cx-w.x)*vx+(cz-w.z)*vz<0){vx=-vx;vz=-vz}b={dist,w,vx,vz}}})}
+   if(b&&b.dist<1){const sd=(px-b.w.x)*b.vx+(pz-b.w.z)*b.vz,k=b.w.dim[2]/2+.125;out.push({type:'ac',x:px-b.vx*sd+b.vx*k,y:py,z:pz-b.vz*sd+b.vz*k,rot:Math.atan2(b.vx,b.vz),dim:dm})}
+   else out.push({type:'ac',x:px+ux*.125,y:py,z:pz+uz*.125,rot:Math.atan2(ux,uz),dim:dm})}
+  else if(d.type==='ceilingFan')out.push({type:'cfan',x:px,y:py-.2,z:pz,rot:0,dim:[1.2,.4,1.2]});
+  else if(d.type==='fan')out.push({type:'fan',x:px,y:py+.6,z:pz,rot:0,dim:[.4,1.2,.4]})});return out}
 function importText(txt){let r;try{r=JSON.parse(txt)}catch{$('#st').textContent='Could not parse that JSON file.';return}
  const l=fromRoomPlan(r);if(!l.length){$('#st').textContent='The scan has no walls or objects.';return}build(l,'Scan imported')}
 window.importScanJSONText=importText;
@@ -224,7 +235,7 @@ function recSensor(){sensor=null;const ws=of('wall'),W=of('window'),D=of('door')
    if(-w.x*nx-w.z*nz<0){nx=-nx;nz=-nz}/* room center is the origin, so point the normal toward it */
    for(let s=-w.dim[0]/2+.6;s<=w.dim[0]/2-.6;s+=.25){
     const p={x:w.x+dx*s+nx*.2,z:w.z+dz*s+nz*.2},dW=near(p,W),dD=near(p,D),dH=near(p,H);
-    if(O.some(o=>rectDist(p,o)<.15))continue;
+    if(O.some(o=>rectDist(p,o)<.15)||SG.rej.sensor.some(r=>Math.hypot(r.x-p.x,r.z-p.z)<1.2))continue;
     if(strict&&((dW!==null&&dW<.8)||(dD!==null&&dD<.8)||(dH!==null&&dH<1.5)))continue;
     const score=Math.min(dW??2,2)+Math.min(dD??2,2)-(dH===null?0:Math.abs(dH-3)*.8)-Math.hypot(p.x,p.z)*.3;
     if(!best||score>best.score)best={score,x:p.x,z:p.z,dW,dD,dH,relaxed:!strict}}}
@@ -299,9 +310,13 @@ function pFire(){const H=heats(),f=n=>n===null||n===undefined?'none in room':`${
  <li>On the wall at about ${r1(sensor.y)} m height (breathing zone).</li><li>Nearest window: ${f(sensor.dW)}. Nearest door: ${f(sensor.dD)}.</li>
  <li>${H.length?`Nearest heat source (${[...new Set(H.map(h=>T[h.type][0]))].join(', ')}): ${f(sensor.dH)}.`:'No heat source detected; the middle of a wall works.'}</li></ul>
  ${sensor.relaxed?'<div class="mu">No spot met every clearance (0.8 m from windows and doors, 1.5 m from heat sources). This is the best compromise; consider moving furniture.</div>':''}
- <div class="row"><button id="bPick" class="${pick?'on':''}">${pick?'Tap the floor…':'Choose a spot manually'}</button></div>
+ <div class="row"><button id="bNo">${Z('No, another spot','不要，換一個位置')}</button><button id="bPick" class="${pick?'on':''}">${pick?'Tap the floor…':'Choose a spot manually'}</button></div>
  <div class="mu">Heat rises, so smoke and heat reach the ceiling first. That is why a ceiling smoke alarm is also recommended.</div></div>`:'<div class="card">Import a scan or load the demo room first.</div>');
- const b=$('#bPick');if(b)b.onclick=()=>{pick=!pick;pFire()};fireLive()}
+ const b=$('#bPick');if(b)b.onclick=()=>{pick=!pick;pFire()};
+ const bn=$('#bNo');if(bn)bn.onclick=()=>{SG.prevS={...sensor};SG.rej.sensor.push({x:sensor.x,z:sensor.z});recSensor();pFire();drawOv()};fireLive();
+ if(sensor){const h=sensorHit(),pv=SG.prevS,f=v=>v==null?null:v,d=(a,c)=>a==null||c==null?'':sg(a-c,1)+' m';
+  $('#p-fire').insertAdjacentHTML('beforeend',`<div class="card"><b>${Z('Air box and airflow','空氣盒與氣流')}</b><div class="mu">${h?Z(`In the airflow of ${h.t==='ac'?'the AC':'a fan'}: readings can be skewed by the draught. Choose another spot or re-aim the device.`,`位於${h.t==='ac'?'冷氣':'風扇'}的氣流中：直吹可能讓讀數失真。請換位置或調整出風方向。`):Z('Not in the path of any running AC or fan.','不在運轉中冷氣或風扇的氣流路徑上。')}</div>
+  ${pv?`<div class="mu">${Z('vs the spot you skipped','與你略過的位置相比')}: ${Z('window','窗')} ${d(sensor.dW,pv.dW)||'-'}, ${Z('door','門')} ${d(sensor.dD,pv.dD)||'-'}, ${Z('heat source','熱源')} ${d(sensor.dH,pv.dH)||'-'}. ${Z('Closer to heat detects fires sooner; farther from windows and doors avoids false readings.','越近熱源越早偵測；越遠離門窗越不易誤判。')}</div>`:''}</div>`)}}
 
 /* ================= DLC: live sensor, alerts, push, air & power ================= */
 const SIMOPT='<option value="off">Off</option><option value="normal">Normal</option><option value="stuffy">Stuffy (CO₂ rising)</option><option value="fire">Possible fire (fast heating)</option><option value="pollution">Pollution (PM2.5 rising)</option><option value="load">Power overload</option>';
@@ -416,6 +431,7 @@ Other=>其他
 Home quality=>居家環境品質
 Air conditioner=>冷氣
 Fan=>風扇
+Ceiling fan=>吊扇
 Types come from the scan. If one is wrong, select it (tap it in 3D or in the list) and change it. Sizes are in meters.=>類型來自掃描結果。若辨識錯誤，請選取它（點 3D 物件或清單）後修改。尺寸單位為公尺。
 from scan=>來自掃描
 edited=>已修改
@@ -551,25 +567,31 @@ let cool={opt:'none',shgc:.85,vlt:.88,cop:3,ppl:6,inl:500,dT:1,pct:6,fanW:40,wes
 const westWins=()=>of('window').filter(w=>cool.west[w.id]!==false);
 function calc(o,fan){const A=westWins().reduce((a,w)=>a+w.dim[0]*w.dim[1],0),sol=A*o[2]*SUM/1000,th=sol+(cool.inl+cool.ppl*75)*14/1000;
  let e=th/cool.cop;if(fan)e=e*(1-cool.pct/100*cool.dT)+cool.fanW*14/1000;return{sol,e,cost:e*rate}}
-function placeCool(){const ws=of('wall'),seats=items.filter(i=>['chair','sofa','bed'].includes(i.type)),O=items.filter(i=>!isS(i.type)),Wn=of('window');cool.ac=cool.fan=null;
- if(!ws.length||!seats.length)return;const cx=ws.reduce((a,w)=>a+w.x,0)/ws.length,cz=ws.reduce((a,w)=>a+w.z,0)/ws.length;let best=null;
+const ad=(a,b)=>{let d=a-b;while(d>Math.PI)d-=2*Math.PI;while(d<-Math.PI)d+=2*Math.PI;return d},kk=(x,z)=>Math.round(x*10)+','+Math.round(z*10),sg=(v,n)=>(v>=0?'+':'−')+Math.abs(v).toFixed(n);
+let SG={w:.5,rej:{ac:[],fan:[],sensor:[]},last:{},prevS:null,af:true};/* w: 0 = favour placement clearance, 1 = favour energy saved */
+function rank(L,rej){const A=L.filter(c=>!rej.includes(c.key)),lo=Math.min(...A.map(c=>c.e)),sp=(Math.max(...A.map(c=>c.e))-lo)||1;A.forEach(c=>c.sc=SG.w*((c.e-lo)/sp)+(1-SG.w)*(c.pl/100));A.sort((x,y)=>y.sc-x.sc);
+ const o=[];for(const c of A){if(o.every(q=>Math.hypot(q.x-c.x,q.z-c.z)>=1.2))o.push(c);if(o.length>=4)break}return o}
+function placeCool(){const ws=of('wall'),seats=items.filter(i=>['chair','sofa','bed'].includes(i.type)),O=items.filter(i=>!isS(i.type)),Wn=of('window'),H=heats();cool.ac=cool.fan=null;cool.acR=[];cool.fnR=[];
+ if(!ws.length||!seats.length)return;const cx=ws.reduce((a,w)=>a+w.x,0)/ws.length,cz=ws.reduce((a,w)=>a+w.z,0)/ws.length,sx=seats.reduce((a,t)=>a+t.x,0)/seats.length,sz=seats.reduce((a,t)=>a+t.z,0)/seats.length,
+  tall=(p,q)=>[.1,.2,.3,.4,.5,.6,.7,.8,.9].some(k=>{const r={x:p.x+(q.x-p.x)*k,z:p.z+(q.z-p.z)*k};return O.some(o=>o!==q&&o.dim[1]>=1.2&&rectDist(r,o)<.05)}),
+  aim=(p,reach,k0)=>{let b={cv:0,ben:-1,th:Math.atan2(sx-p.x,sz-p.z)};[Math.atan2(sx-p.x,sz-p.z),...seats.map(t=>Math.atan2(t.x-p.x,t.z-p.z))].forEach(th=>{
+   const cov=seats.filter(t=>{const L=Math.hypot(t.x-p.x,t.z-p.z);return L<=reach&&L>.3&&Math.abs(ad(Math.atan2(t.x-p.x,t.z-p.z),th))<=.8&&!tall(p,t)}),
+   ben=cov.reduce((a,t)=>a+1-Math.min(.6,Math.max(0,(Math.hypot(t.x-p.x,t.z-p.z)-k0)/6)),0);if(ben>b.ben)b={cv:cov.length,ben,th}});return b},
+  base=calc(OPTS.none,0).e,fk=cool.fanW*14/1000,AC=[],FN=[];
  for(const w of ws){let nx=Math.sin(w.rot),nz=Math.cos(w.rot);if((cx-w.x)*nx+(cz-w.z)*nz<0){nx=-nx;nz=-nz}
-  for(let s=-w.dim[0]/2+.6;s<=w.dim[0]/2-.6;s+=.5){const p={x:w.x+Math.cos(w.rot)*s+nx*.15,z:w.z-Math.sin(w.rot)*s+nz*.15};
-   if(Wn.length&&near(p,Wn)<.6)continue;
-   const ds=seats.map(t=>Math.hypot(t.x-p.x,t.z-p.z)),bl=seats.filter(t=>{for(let k=.1;k<.95;k+=.1){const q={x:p.x+(t.x-p.x)*k,z:p.z+(t.z-p.z)*k};
-     if(O.some(o=>o!==t&&o.dim[1]>=1.2&&rectDist(q,o)<.05))return true}return false}).length;
-   const mean=ds.reduce((a,b)=>a+b)/ds.length,mx=Math.max(...ds),sc_=-mean-.5*mx-3*bl;
-   if(!best||sc_>best.sc)best={sc:sc_,x:p.x,z:p.z,y:Math.min(2.5,room.ceil-.3),nx,nz,rot:w.rot,mean,mx,bl,n:seats.length}}}
- cool.ac=best;if(!best)return;
- const far=seats.reduce((a,t)=>Math.hypot(t.x-best.x,t.z-best.z)>Math.hypot(a.x-best.x,a.z-best.z)?t:a),L=Math.hypot(far.x-best.x,far.z-best.z)||1,
-  T={x:far.x+(best.x-far.x)/L*1.6,z:far.z+(best.z-far.z)/L*1.6};let f=null;
- for(let x=-room.ext/2;x<=room.ext/2;x+=.25)for(let z=-room.ext/2;z<=room.ext/2;z+=.25){const p={x,z};
-  if(O.some(o=>rectDist(p,o)<.5)||(near(p,ws)??9)<.4||!inside(p,ws))continue;const d=Math.hypot(x-T.x,z-T.z);if(!f||d<f.d)f={x,z,d,tx:far.x,tz:far.z}}
- cool.fan=f}
+  for(let s=-w.dim[0]/2+.6;s<=w.dim[0]/2-.6;s+=.5){const p={x:w.x+Math.cos(w.rot)*s+nx*.15,z:w.z-Math.sin(w.rot)*s+nz*.15};if(Wn.length&&near(p,Wn)<.6)continue;
+   const am=aim(p,6,2),th=am.th,cv=am.cv,ds=seats.map(t=>Math.hypot(t.x-p.x,t.z-p.z)),bl=seats.filter(t=>tall(p,t)).length;
+   let ca=2;for(let d=.3;d<=2;d+=.3){if(O.some(o=>o.dim[1]>=1.2&&rectDist({x:p.x+nx*d,z:p.z+nz*d},o)<.05)){ca=d;break}}
+   AC.push({key:kk(p.x,p.z),x:p.x,z:p.z,y:Math.min(2.5,room.ceil-.3),nx,nz,rot:Math.atan2(nx,nz),th,mean:ds.reduce((a,b)=>a+b)/ds.length,mx:Math.max(...ds),bl,n:seats.length,cv,
+    e:base*cool.pct/100*cool.dT*Math.max(0,am.ben)/seats.length,pl:(Math.min(near(p,Wn)??2,2)+Math.min(near(p,H)??2,2)+ca)/6*100})}}
+ for(let x=-room.ext/2;x<=room.ext/2;x+=.5)for(let z=-room.ext/2;z<=room.ext/2;z+=.5){const p={x,z};if(O.some(o=>rectDist(p,o)<.5)||(near(p,ws)??9)<.4||!inside(p,ws))continue;
+  const am=aim(p,4,1),th=am.th,cv=am.cv,cl=Math.min(near(p,O)??1.5,near(p,ws)??1.5,1.5);
+  FN.push({key:kk(x,z),x,z,th,tx:x+Math.sin(th)*1.5,tz:z+Math.cos(th)*1.5,cv,n:seats.length,e:base*cool.pct/100*cool.dT*Math.max(0,am.ben)/seats.length-fk,pl:cl/1.5*100})}
+ cool.acR=rank(AC,SG.rej.ac);cool.fnR=rank(FN,SG.rej.fan);cool.ac=cool.acR[0]||null;cool.fan=cool.fnR[0]||null}
 const inside=(p,ws)=>{const xs=ws.map(w=>w.x),zs=ws.map(w=>w.z);return p.x>Math.min(...xs)&&p.x<Math.max(...xs)&&p.z>Math.min(...zs)&&p.z<Math.max(...zs)};
-function coolOv(){devOv();westWins().forEach(w=>{const a=w.dim[0]/2,b=w.dim[1]/2,p=[[-a,-b],[a,-b],[a,-b],[a,b],[a,b],[-a,b],[-a,b],[-a,-b]].map(([x,y])=>new THREE.Vector3(x,y,.06)),
+function coolOv(){devOv();altOv();westWins().forEach(w=>{const a=w.dim[0]/2,b=w.dim[1]/2,p=[[-a,-b],[a,-b],[a,-b],[a,b],[a,b],[-a,b],[-a,b],[-a,-b]].map(([x,y])=>new THREE.Vector3(x,y,.06)),
   l=new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(p),new THREE.LineBasicMaterial({color:0xe37400}));l.position.set(w.x,w.y,w.z);l.rotation.y=w.rot;ov.add(l)});
- const a=of('ac').length?null:cool.ac,f=of('fan').length?null:cool.fan,V=(x,y,z)=>new THREE.Vector3(x,y,z),ln=(p,c)=>new THREE.Line(new THREE.BufferGeometry().setFromPoints(p),new THREE.LineBasicMaterial({color:c}));
+ const a=of('ac').length?null:cool.ac,f=(of('fan').length+of('cfan').length)?null:cool.fan,V=(x,y,z)=>new THREE.Vector3(x,y,z),ln=(p,c)=>new THREE.Line(new THREE.BufferGeometry().setFromPoints(p),new THREE.LineBasicMaterial({color:c}));
  if(a){const m=new THREE.Mesh(new THREE.BoxGeometry(.9,.3,.25),new THREE.MeshBasicMaterial({color:0x1a73e8}));m.position.set(a.x,a.y,a.z);m.rotation.y=a.rot;ov.add(m,ln([V(a.x,a.y,a.z),V(a.x+a.nx*2.5,a.y-.7,a.z+a.nz*2.5)],0x1a73e8))}
  if(f){const c=new THREE.Mesh(new THREE.CylinderGeometry(.18,.18,.5,16),new THREE.MeshBasicMaterial({color:0x188038})),r=new THREE.Mesh(new THREE.RingGeometry(.48,.5,32),new THREE.MeshBasicMaterial({color:0x188038,side:THREE.DoubleSide}));
   c.position.set(f.x,.35,f.z);r.rotation.x=-Math.PI/2;r.position.set(f.x,.02,f.z);ov.add(c,r,ln([V(f.x,.8,f.z),V(f.tx,.8,f.tz)],0x188038))}}
@@ -602,7 +624,7 @@ function pCool(){placeCool();const W=of('window');
  <div class="mu">${Z('Prototype scope: window solar gain and AC/fan geometry are in. Not yet: zoned heat-load model, measured hourly weather, real equipment data.','原型範圍：已含窗戶日射得熱與冷氣／風扇幾何檢查。尚未含：熱負荷分區模型、實際逐時氣象、設備性能資料。')}</div>`;
  $('#cOpt').onchange=e=>{cool.opt=e.target.value;cool.shgc=OPTS[cool.opt][2];cool.vlt=OPTS[cool.opt][3];pCool()};
  document.querySelectorAll('#p-cool [data-k]').forEach(i=>i.onchange=()=>{cool[i.dataset.k]=+i.value;pCool()});
- document.querySelectorAll('#p-cool [data-w]').forEach(i=>i.onchange=()=>{cool.west[i.dataset.w]=i.checked;pCool();drawOv()});devCard();drawOv()}
+ document.querySelectorAll('#p-cool [data-w]').forEach(i=>i.onchange=()=>{cool.west[i.dataset.w]=i.checked;pCool();drawOv()});sugCard();devCard();drawOv()}
 
 /* ================= Score overview: Safety / Energy / Pests ================= */
 let done={},alertMode=false;
@@ -693,7 +715,7 @@ function devUI(it){const d=it.dev,ac=it.type==='ac',fn=it.type==='fan',n=(k,l,st
  (fn?`<div class="row">${n('dir',Z('Aim ° (-180…180)','朝向角度'),15,-180,180)}${sw(Z('Oscillate','擺頭'))}</div>`:'')}
 function devWire(){document.querySelectorAll('#p-obj [data-dv]').forEach(e=>e.onchange=()=>{if(!sel||!sel.dev)return;const k=e.dataset.dv;sel.dev[k]=e.type==='checkbox'?e.checked:+e.value;sync(sel);refresh()})}
 /* which seats a device blows on: the item's front (+Z) turned by its aim, a 30° half-angle (60° when swinging), 6 m reach for AC, 4 m for a fan; tall furniture (1.2 m+) on the line blocks it */
-function cover(a){const d=a.dev,O=items.filter(i=>!isS(i.type)),seats=O.filter(i=>['chair','sofa','bed'].includes(i.type)),th=a.rot+d.dir*Math.PI/180,v={x:Math.sin(th),z:Math.cos(th)},half=(d.swing?60:30)*Math.PI/180,reach=a.type==='fan'?4:6;let c=0,b=0;
+function cover(a){if(a.type==='cfan'){const S=items.filter(i=>['chair','sofa','bed'].includes(i.type)),c=S.filter(t=>Math.hypot(t.x-a.x,t.z-a.z)<=2.2).length;return{n:S.length,c,b:0,v:{x:0,z:1},reach:2.2,half:0}}const d=a.dev,O=items.filter(i=>!isS(i.type)),seats=O.filter(i=>['chair','sofa','bed'].includes(i.type)),th=a.rot+d.dir*Math.PI/180,v={x:Math.sin(th),z:Math.cos(th)},half=(d.swing?60:30)*Math.PI/180,reach=a.type==='fan'?4:6;let c=0,b=0;
  seats.forEach(t=>{const dx=t.x-a.x,dz=t.z-a.z,L=Math.hypot(dx,dz);if(L>reach||L<.1)return;if(Math.acos(Math.max(-1,Math.min(1,(dx*v.x+dz*v.z)/L)))>half)return;
   [.1,.2,.3,.4,.5,.6,.7,.8,.9].some(k=>{const q={x:a.x+dx*k,z:a.z+dz*k};return O.some(o=>o!==t&&o!==a&&o.dim[1]>=1.2&&rectDist(q,o)<.05)})?b++:c++});return{n:seats.length,c,b,v,reach,half}}
 function devChecks(L){const W=of('window'),H=heats();
@@ -702,13 +724,14 @@ function devChecks(L){const W=of('window'),H=heats();
   if(c.n)L('energy','acv'+id,`AC #${id} airflow aim`,`冷氣 #${id} 出風方向`,15,15*(c.n-c.c)/c.n,Z(`${c.c}/${c.n} seats are in the airflow${c.b?`, ${c.b} blocked by tall furniture`:''}`,`${c.c}/${c.n} 個座位在出風範圍內${c.b?`，${c.b} 個被高家具擋住`:''}`),'cool');
   L('energy','acw'+id,`AC #${id} near heat`,`冷氣 #${id} 靠近熱源`,10,(dw!==null&&dw<1)||(dh!==null&&dh<1)?10:0,Z('Within 1 m of a window or heat source: its thermostat may read warm and run longer','離窗或熱源不到 1 m：感溫可能偏高而多運轉'),'cool')});
  of('refrigerator').forEach(f=>{const dh=near(f,H),bad=dh!==null&&dh<.6;L('energy','fr'+f.id,`Fridge #${f.id} placement`,`冰箱 #${f.id} 位置`,10,bad?10:0,bad?Z(`Only ${r2(dh)} m from a heat source: it works harder`,`離熱源只有 ${r2(dh)} m：壓縮機會更費力`):Z('Away from heat sources','遠離熱源'),'cool')});
- of('fan').filter(f=>f.dev.on).forEach(f=>{const c=cover(f);if(c.n)L('energy','fp'+f.id,`Fan #${f.id} aim`,`風扇 #${f.id} 朝向`,10,c.c?0:10,Z(`${c.c}/${c.n} seats within its airflow`,`${c.c}/${c.n} 個座位在風扇範圍內`),'cool')})}
+ of('fan').concat(of('cfan')).filter(f=>f.dev.on).forEach(f=>{const c=cover(f);if(c.n)L('energy','fp'+f.id,`Fan #${f.id} aim`,`風扇 #${f.id} 朝向`,10,c.c?0:10,Z(`${c.c}/${c.n} seats within its airflow`,`${c.c}/${c.n} 個座位在風扇範圍內`),'cool')})}
 function devOv(){const V=(x,y,z)=>new THREE.Vector3(x,y,z),ln=(p,c)=>new THREE.Line(new THREE.BufferGeometry().setFromPoints(p),new THREE.LineBasicMaterial({color:c}));
+ items.filter(i=>i.type==='cfan'&&i.dev).forEach(f=>{const r=new THREE.Mesh(new THREE.RingGeometry(2.14,2.2,48),new THREE.MeshBasicMaterial({color:f.dev.on?0x188038:0x9aa0a6,side:THREE.DoubleSide}));r.rotation.x=-Math.PI/2;r.position.set(f.x,.02,f.z);ov.add(r)});
  items.filter(i=>(i.type==='ac'||i.type==='fan')&&i.dev).forEach(a=>{const c=cover(a),y=a.y-(a.type==='ac'?.4:0),col=a.dev.on?(a.type==='ac'?0x1a73e8:0x188038):0x9aa0a6,th=Math.atan2(c.v.x,c.v.z);
   [-c.half,0,c.half].forEach(o=>ov.add(ln([V(a.x,y,a.z),V(a.x+Math.sin(th+o)*c.reach,y,a.z+Math.cos(th+o)*c.reach)],col)))});
  const W=of('window');if(W.length>1){const b=xv();ov.add(ln([V(b.p.x,1.2,b.p.z),V(b.q.x,1.2,b.q.z)],0x0ea5e9));const t=new THREE.Mesh(new THREE.SphereGeometry(.07),new THREE.MeshBasicMaterial({color:0x0ea5e9}));t.position.set(b.q.x,1.2,b.q.z);ov.add(t)}}
 function xv(){const W=of('window');let b=null;W.forEach((p,i)=>W.slice(i+1).forEach((q,k)=>{const d=Math.hypot(p.x-q.x,p.z-q.z);if(!b||d>b.d)b={d,p,q,i:i+1,k:i+k+2}}));return b}
-function devCard(){const D=items.filter(i=>i.dev),Wn=of('window'),H=heats(),ac=of('ac').find(a=>a.dev.on)||of('ac')[0],fn=of('fan').find(a=>a.dev.on),e=i=>i.dev.on?i.dev.w*i.dev.h/1000:0,tot=D.reduce((s,i)=>s+e(i),0),N=[];
+function devCard(){const D=items.filter(i=>i.dev),Wn=of('window'),H=heats(),ac=of('ac').find(a=>a.dev.on)||of('ac')[0],fn=of('fan').concat(of('cfan')).find(a=>a.dev.on),e=i=>i.dev.on?i.dev.w*i.dev.h/1000:0,tot=D.reduce((s,i)=>s+e(i),0),N=[];
  if(ac){const d=ac.dev,c=cover(ac),k=e(ac),dl=Math.max(0,26-d.set),dw=near(ac,Wn),dh=near(ac,H),
   hit=Wn.map((w,i)=>{const dx=w.x-ac.x,dz=w.z-ac.z,al=dx*c.v.x+dz*c.v.z,pp=Math.abs(dx*c.v.z-dz*c.v.x);return al>0&&al<c.reach&&pp<.8?i+1:0}).filter(Boolean);
   N.push(Z(`AC #${ac.id} is ${d.on?'on':'off'}, aimed ${d.dir}° from its front${d.swing?' (swinging)':''}: ${c.c}/${c.n} seats in the airflow${c.b?`, ${c.b} blocked`:''}.`,`冷氣 #${ac.id} ${d.on?'開啟':'關閉'}，出風偏離正面 ${d.dir}°${d.swing?'（擺風）':''}：${c.c}/${c.n} 個座位在出風範圍內${c.b?`，${c.b} 個被擋住`:''}。`));
@@ -751,6 +774,54 @@ function pOut(){const D=items.filter(i=>i.dev&&i.dev.on&&i.dev.w>=300),F=of('ref
  sec(Z('Heat and light','悶熱與照明'),ul([b?Z(`Without AC, open windows ${b.i} and ${b.k} for a cross breeze when it is cooler outside.`,`沒有冷氣時，室外較涼可同時開第 ${b.i}、${b.k} 扇窗形成對流。`):Z('Without AC, open a window and use a battery fan.','沒有冷氣時，開窗並使用電池風扇。'),of('bed').length?Z('Keep a light within reach of each bed.','每張床旁放一支手電筒。'):Z('Keep a light near where you sleep.','睡覺的地方旁放一支手電筒。'),of('stairs').length?Z('Leave a light at the stairs.','樓梯口放一盞燈。'):Z('Prefer LED lights to candles: candles are a fire risk.','用 LED 燈取代蠟燭：蠟燭有火災風險。'),Z('Put the air box and router on a power bank so alerts keep working.','把空氣盒與路由器接行動電源，警示才不會中斷。')]))
  document.querySelectorAll('#p-out [data-po]').forEach(c=>c.onchange=()=>{done['po'+c.dataset.po]=c.checked;pOut();pScore()})}
 function outOv(){const k=kitSpot();if(!k)return;const m=new THREE.Mesh(new THREE.CylinderGeometry(.18,.18,.04,24),new THREE.MeshBasicMaterial({color:0xf5c518}));m.position.set(k.x,.03,k.z);ov.add(m)}
+/* ================= Airflow: animated streaks from every running AC / fan, plus what-if ghosts ================= */
+const AF={g:new THREE.Group(),m:new Map(),sr:null,t:0},AFC={ac:0x1a73e8,fan:0x188038,cfan:0x188038,xv:0x0ea5e9},AFN=36;sc.add(AF.g);
+function afSources(){const S=[];items.filter(i=>i.dev&&i.dev.on&&['ac','fan','cfan'].includes(i.type)).forEach(i=>S.push({k:'i'+i.id,id:i.id,t:i.type,x:i.x,y:i.type==='ac'?i.y-.1:i.type==='cfan'?i.y-.25:i.y+.3,z:i.z,th:i.rot+i.dev.dir*Math.PI/180,half:(i.dev.swing?60:30)*Math.PI/180,sw:i.dev.swing,ghost:false}));
+ if(tab==='cool'){if(!of('ac').length&&cool.ac)S.push({k:'gac',t:'ac',x:cool.ac.x,y:cool.ac.y-.1,z:cool.ac.z,th:cool.ac.th,half:.52,ghost:true});
+  if(!of('fan').length&&!of('cfan').length&&cool.fan)S.push({k:'gfn',t:'fan',x:cool.fan.x,y:.8,z:cool.fan.z,th:cool.fan.th,half:.52,ghost:true});
+  const b=of('window').length>1&&xv();if(b)S.push({k:'xv',t:'xv',x:b.p.x,y:1.2,z:b.p.z,th:Math.atan2(b.q.x-b.p.x,b.q.z-b.p.z),half:.1,len:b.d,ghost:true})}
+ return S}
+function sensorHit(){if(!sensor)return null;return afSources().find(s=>!s.ghost&&s.t!=='cfan'&&(()=>{const dx=sensor.x-s.x,dz=sensor.z-s.z,L=Math.hypot(dx,dz);return L>.1&&L<(s.t==='ac'?6:4)&&Math.abs(ad(Math.atan2(dx,dz),s.th))<=s.half})())||null}
+window.__af=function(){const show=SG.af&&['cool','air','fire','energy'].includes(tab);AF.g.visible=show;if(!show||!items.length)return;
+ const S=afSources(),t=performance.now()/1000,dt=Math.min(.05,t-(AF.t||t));AF.t=t;
+ for(const[k,v]of AF.m)if(!S.some(s=>s.k===k)){AF.g.remove(v.l);v.l.geometry.dispose();AF.m.delete(k)}
+ const O=items.filter(i=>!isS(i.type)),ws=of('wall');
+ S.forEach(s=>{let v=AF.m.get(s.k);if(!v){const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(new Float32Array(AFN*6),3));
+   const l=new THREE.LineSegments(g,new THREE.LineBasicMaterial({color:AFC[s.t],transparent:true}));l.frustumCulled=false;AF.g.add(l);v={l,P:Array.from({length:AFN},()=>({d:Math.random()*4,a:0,r:0}))};AF.m.set(s.k,v)}
+  v.l.material.opacity=s.ghost?.4:.85;
+  const reach=s.t==='cfan'?Math.min(s.y,2):s.t==='xv'?s.len:s.t==='ac'?6:4,sp=s.t==='cfan'?1:s.t==='xv'?.9:s.t==='ac'?1.6:1.3,pos=v.l.geometry.attributes.position.array,cen=s.th+(s.sw?Math.sin(t*1.2)*s.half*.6:0);
+  v.P.forEach((p,i)=>{p.d+=sp*dt;if(p.d>reach||p.hit){p.d=0;p.hit=false;p.a=(Math.random()-.5)*2*s.half*(s.sw?.4:1);p.r=Math.random()*6.28}
+   let x,y,z,dx=0,dy=0,dz=0;
+   if(s.t==='cfan'){const r=.35+p.d*.55;x=s.x+Math.cos(p.r+t)*r;z=s.z+Math.sin(p.r+t)*r;y=s.y-p.d;dy=-1}
+   else{const ang=cen+p.a;dx=Math.sin(ang);dz=Math.cos(ang);dy=s.t==='ac'?-.12:s.t==='fan'?.02:0;x=s.x+dx*p.d;z=s.z+dz*p.d;y=s.y+dy*p.d;
+    if(O.some(o=>o.id!==s.id&&o.y+o.dim[1]/2>=y&&o.y-o.dim[1]/2<=y&&rectDist({x,z},o)<.04)||(s.t!=='xv'&&ws.length&&near({x,z},ws)<.04))p.hit=true}
+   const q=i*6,L=.22;pos[q]=x;pos[q+1]=Math.max(.05,y);pos[q+2]=z;pos[q+3]=x-dx*L;pos[q+4]=Math.max(.05,y-dy*L);pos[q+5]=z-dz*L});
+  v.l.geometry.attributes.position.needsUpdate=true});
+ if(!AF.sr){AF.sr=new THREE.Mesh(new THREE.SphereGeometry(.12),new THREE.MeshBasicMaterial({transparent:true,opacity:.55}));AF.g.add(AF.sr)}
+ AF.sr.visible=!!sensor;if(sensor){AF.sr.position.set(sensor.x,sensor.y,sensor.z);AF.sr.material.color.setHex(sensorHit()?0xe37400:0x188038)}};
+function altOv(){const dot=(c,col,y)=>{const m=new THREE.Mesh(new THREE.SphereGeometry(.09),new THREE.MeshBasicMaterial({color:col,transparent:true,opacity:.45}));m.position.set(c.x,y,c.z);ov.add(m)};
+ (cool.acR||[]).slice(1).forEach(c=>dot(c,0x1a73e8,c.y));(cool.fnR||[]).slice(1).forEach(c=>dot(c,0x188038,.5))}
+function placeSug(k){const c=k==='ac'?cool.ac:cool.fan;if(!c)return;let it;
+ if(k==='ac'){it=addItem({type:'ac',x:c.x,y:c.y,z:c.z,rot:c.rot,dim:[.9,.3,.25],auto:false});it.dev.dir=Math.max(-60,Math.min(60,Math.round(ad(c.th,c.rot)*180/Math.PI)))}
+ else{it=addItem({type:'fan',x:c.x,y:.6,z:c.z,rot:0,dim:[.4,1.2,.4],auto:false});it.dev.dir=Math.round(((c.th*180/Math.PI+180)%360+360)%360-180)}
+ it.dev.on=true;sync(it);recSensor();refresh()}
+function sugCard(){const f=k=>{const c=k==='ac'?cool.ac:cool.fan,R=k==='ac'?cool.acR:cool.fnR,real=k==='ac'?of('ac')[0]:(of('fan')[0]||of('cfan')[0]),nm=k==='ac'?Z('Air conditioner','冷氣'):Z('Fan','風扇'),last=SG.last[k];
+  if(real)return `<div class="mu"><b>${nm}</b>: ${Z(`placed as #${real.id}. Edit its position or aim and watch the airflow change.`,`已放置為 #${real.id}。編輯位置或方向可看到氣流變化。`)}</div>`;
+  if(!c)return `<div class="mu"><b>${nm}</b>: ${SG.rej[k].length?Z('No more options. Reset to see them again.','沒有更多選項了。重設後可再看。'):Z('Add chairs, sofas or beds to get suggestions.','加入椅子、沙發或床才有建議。')}</div>`;
+  const ln=x=>`${sg(x.e,2)} kWh/${Z('day','日')} (NT$ ${sg(x.e*rate,1)}) · ${Z('clearance','淨空')} ${Math.round(x.pl)}% · ${x.cv}/${x.n} ${Z('seats','座位')}`;
+  return `<div style="margin:6px 0"><b>${nm}</b><div class="mu">${Z('Estimated net saving','預估淨省電')} ${ln(c)}</div>${k==='fan'&&c.e<0?`<div class="mu">${Z('At the current numbers the fan uses more electricity than the setpoint rise saves: it adds comfort, not savings.','以目前數值，風扇耗電大於調高設定溫度省下的電：它增加的是舒適，不是省電。')}</div>`:''}
+  ${last?`<div class="mu">${Z('vs the one you skipped','與你略過的相比')}: ${sg(c.e-last.e,2)} kWh/${Z('day','日')}, ${Z('clearance','淨空')} ${sg(c.pl-last.pl,0)}%</div>`:''}
+  <div class="row"><button data-sp="${k}">${Z('Place it','放置')}</button><button data-sn="${k}">${Z('No, another','不要，換一個')}</button></div>
+  ${R.slice(1).map((x,i)=>`<div class="mu">${Z('Option','選項')} ${i+2}: ${ln(x)} <i>(${sg(x.e-c.e,2)} kWh, ${sg(x.pl-c.pl,0)}%)</i></div>`).join('')}</div>`};
+ $('#p-cool').insertAdjacentHTML('beforeend',`<div class="card"><b>${Z('Suggested placement','建議位置')}</b>
+ <label style="display:block"><input type="checkbox" id="afT" ${SG.af?'checked':''}> ${Z('Show airflow','顯示氣流')}</label>
+ <div class="row"><span class="mu">${Z('Focus: placement','偏重：位置')}</span><input type="range" min="0" max="1" step=".05" value="${SG.w}" id="sgW" style="flex:1"><span class="mu">${Z('energy','省電')}</span></div>
+ ${f('ac')}${f('fan')}<div class="row"><button id="sgR">${Z('Reset suggestions','重設建議')}</button></div>
+ <div class="mu">${Z('Energy is indicative: a better-aimed unit lets you raise the setpoint a little, using the saving per °C and the setpoint rise above. Clearance is the free space around the spot, so a high saving and high clearance may not go together. Dots in 3D mark the other options.','節電為估計值：出風更準確可讓設定溫度略調高，使用上方的每 °C 省電與調高幅度。淨空是該位置周圍的空間，省電高與淨空高不一定同時成立。3D 中的圓點是其他選項。')}</div></div>`);
+ $('#afT').onchange=e=>{SG.af=e.target.checked};$('#sgW').onchange=e=>{SG.w=+e.target.value;pCool()};
+ document.querySelectorAll('#p-cool [data-sn]').forEach(b=>b.onclick=()=>{const k=b.dataset.sn,c=k==='ac'?cool.ac:cool.fan;if(c){SG.last[k]=c;SG.rej[k].push(c.key)}pCool()});
+ document.querySelectorAll('#p-cool [data-sp]').forEach(b=>b.onclick=()=>placeSug(b.dataset.sp));
+ $('#sgR').onclick=()=>{SG.rej={ac:[],fan:[],sensor:[]};SG.last={};SG.prevS=null;SG.w=.5;recSensor();pCool()}}
 refresh();
 if(lang==='zh')setLang('zh');
 

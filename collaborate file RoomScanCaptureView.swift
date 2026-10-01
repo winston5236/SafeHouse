@@ -5,14 +5,17 @@
 //  Documents folder. There is no networking code in this file — nothing
 //  is sent anywhere automatically. Getting the files off the device (to
 //  your Mac, to run the converter) is a manual step you control: Finder
-//  file sharing over USB, or AirDrop. See the README for both.
+//  file sharing over USB, or AirDrop.
 //
 //  RoomCaptureView (Apple's own class, used below) already shows the
 //  live camera feed with a real-time wireframe overlay of detected
 //  walls/doors/windows/objects — that's the built-in RoomPlan scanning
 //  UI. This file adds an explicit "● SCANNING" indicator plus live
-//  wall/opening/object counts on top of it, so it's unambiguous that
-//  it's actively working, not just showing a static camera preview.
+//  wall/opening/object counts on top of it.
+//
+//  RoomPlan cannot detect air conditioners or fans, so DeviceMarker.swift
+//  (a separate file in the same target) lets you tap them in the live camera
+//  view during the scan. Those marks are saved into the JSON under "devices".
 //
 //  Requires: iOS 16+, a LiDAR-equipped device (iPhone 12 Pro+/iPad Pro),
 //  the RoomPlan framework, and camera usage permission.
@@ -21,8 +24,6 @@
 //   - NSCameraUsageDescription  (e.g. "Used to scan your room in 3D.")
 //   - "Application supports iTunes file sharing" -> YES
 //   - "Supports opening documents in place"       -> YES
-//  Those two "file sharing" keys are what let you drag the saved .usdz/.json
-//  off the device locally via Finder, with no server involved.
 //
 
 import SwiftUI
@@ -64,6 +65,9 @@ final class RoomCaptureViewController: UIViewController, RoomCaptureViewDelegate
     private var startBtn: UIButton!
     private var stopBtn: UIButton!
 
+    /// Lets the user tap an AC / ceiling fan / floor fan during the scan (see DeviceMarker.swift).
+    private let marker = DeviceMarker()
+
     /// Called after a successful local save with (usdzURL, jsonURL, base64-encoded room JSON).
     var onSaved: ((URL, URL, String) -> Void)?
     /// Called with human-readable status updates for the UI.
@@ -95,8 +99,7 @@ final class RoomCaptureViewController: UIViewController, RoomCaptureViewDelegate
         // IMPORTANT: pin with Auto Layout constraints rather than setting
         // `.frame = view.bounds` here in viewDidLoad(). At this point
         // view.bounds can still be the pre-layout default size (sometimes
-        // zero), which would silently size the camera view to nothing —
-        // a common reason the live feed appears to not show up at all.
+        // zero), which would silently size the camera view to nothing.
         roomCaptureView = RoomCaptureView(frame: .zero)
         roomCaptureView.translatesAutoresizingMaskIntoConstraints = false
         roomCaptureView.captureSession.delegate = self
@@ -111,6 +114,11 @@ final class RoomCaptureViewController: UIViewController, RoomCaptureViewDelegate
 
         addScanningIndicator()
         addControls()
+
+        // Adds the "Mark AC / Ceiling fan / Floor fan" control just above Start/Finish.
+        marker.install(in: view, captureView: roomCaptureView) { [weak self] message in
+            self?.onStatus?(message)
+        }
     }
 
     // MARK: Live "yes, this is actually scanning" feedback
@@ -217,11 +225,13 @@ final class RoomCaptureViewController: UIViewController, RoomCaptureViewDelegate
     }
 
     @objc private func startTapped() {
-        onStatus?("Scanning… walk the room slowly, keep it in frame.")
+        onStatus?("Scanning… walk the room slowly, keep it in frame. To add an AC or fan, pick a Mark type and tap it.")
         isScanning = true
         setScanningIndicatorVisible(true)
         startBtn.isEnabled = false
         stopBtn.isEnabled = true
+        marker.reset()
+        marker.scanning = true
         roomCaptureView.captureSession.run(configuration: sessionConfig)
     }
 
@@ -231,15 +241,15 @@ final class RoomCaptureViewController: UIViewController, RoomCaptureViewDelegate
         setScanningIndicatorVisible(false)
         startBtn.isEnabled = true
         stopBtn.isEnabled = false
+        marker.scanning = false   // marks are kept and saved with the scan
         roomCaptureView.captureSession.stop()
     }
 
     // MARK: RoomCaptureSessionDelegate — live progress while scanning
 
     /// Fires repeatedly *during* an active scan with the in-progress room
-    /// estimate. This is the actual proof-of-life: if these numbers climb
-    /// as you move the phone, it's genuinely detecting your room, not just
-    /// showing an idle camera preview.
+    /// estimate. If these numbers climb as you move the phone, it's genuinely
+    /// detecting your room, not just showing an idle camera preview.
     func captureSession(_ session: RoomCaptureSession, didUpdate room: CapturedRoom) {
         DispatchQueue.main.async {
             let openings = room.doors.count + room.windows.count
@@ -251,6 +261,7 @@ final class RoomCaptureViewController: UIViewController, RoomCaptureViewDelegate
         onStatus?("Scan session error: \(error.localizedDescription)")
         isScanning = false
         setScanningIndicatorVisible(false)
+        DispatchQueue.main.async { self.marker.scanning = false }
     }
 
     // MARK: RoomCaptureViewDelegate
@@ -282,11 +293,13 @@ final class RoomCaptureViewController: UIViewController, RoomCaptureViewDelegate
             try room.export(to: usdzURL, exportOptions: .model)
 
             // Structured metadata export (positions, dimensions, categories for
-            // every wall/door/window/object) — this is what the site's Scan
-            // tab parses to auto-populate real furniture/wall placement.
+            // every wall/door/window/object). The page parses this to rebuild the room.
             let encoder = JSONEncoder()
             encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
-            let data = try encoder.encode(room)
+            let roomData = try encoder.encode(room)
+
+            // Adds the AC / fan marks as a top-level "devices" array (unchanged if none were marked).
+            let data = try marker.merge(into: roomData)
             try data.write(to: jsonURL, options: .atomic)
 
             // Base64 of the same JSON, for handing straight to the embedded
@@ -294,14 +307,15 @@ final class RoomCaptureViewController: UIViewController, RoomCaptureViewDelegate
             let base64 = data.base64EncodedString()
 
             onSaved?(usdzURL, jsonURL, base64)
-            onStatus?("Saved to Documents:\n\(usdzURL.lastPathComponent)\n\(jsonURL.lastPathComponent)")
+            let marked = marker.marks.count
+            onStatus?("Saved to Documents:\n\(usdzURL.lastPathComponent)\n\(jsonURL.lastPathComponent)" + (marked > 0 ? "\n\(marked) marked device(s) included." : ""))
         } catch {
             onStatus?("Local save failed: \(error.localizedDescription)")
         }
     }
 }
 
-// MARK: - Embedded rat-monitoring site (WKWebView) + native<->JS bridge
+// MARK: - Embedded site (WKWebView) + native<->JS bridge
 
 /// Coordinates page-load state, JS injection, and messages coming back
 /// from the page (window.webkit.messageHandlers.nativeBridge.postMessage).
@@ -360,7 +374,7 @@ final class RatSiteCoordinator: NSObject, WKNavigationDelegate, WKScriptMessageH
         if type == "scanImported" {
             let walls = body["walls"] as? Int ?? 0
             let objects = body["objects"] as? Int ?? 0
-            onStatus?("Loaded into Rat Monitor — \(walls) walls, \(objects) objects placed.")
+            onStatus?("Loaded into Home Guardian — \(walls) walls, \(objects) objects placed.")
         }
     }
 }
@@ -441,7 +455,7 @@ struct RatSiteWebView: View {
 
             if let error = loadError {
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("Rat Monitor didn't load").font(.headline)
+                    Text("Home Guardian didn't load").font(.headline)
                     Text(error).font(.footnote)
                     Button("Reload") {
                         loadError = nil
@@ -465,7 +479,7 @@ struct ContentView: View {
     @State private var statusMessage = "Ready to scan."
     @State private var lastRoomJSONBase64: String?
     @State private var pendingInjectBase64: String?
-    @State private var showRatSite = false
+    @State private var showSite = false
 
     var body: some View {
         NavigationStack {
@@ -480,15 +494,15 @@ struct ContentView: View {
                     if let files = lastSavedFiles {
                         Button {
                             pendingInjectBase64 = lastRoomJSONBase64
-                            showRatSite = true
+                            showSite = true
                         } label: {
-                            Label("🐀 View in Rat Monitor", systemImage: "cube.transparent")
+                            Label("View in Home Guardian", systemImage: "house.fill")
                         }
                         .buttonStyle(.borderedProminent)
 
                         // Direct share sheet — the reliable way to get the files off
                         // the device if you also want them on your Mac. AirDrop or
-                        // "Save to Files". Bypasses hunting through the Files app.
+                        // "Save to Files".
                         ShareLink(items: [files.usdz, files.json]) {
                             Label("Share Scan Files (.usdz + .json)", systemImage: "square.and.arrow.up")
                         }
@@ -500,12 +514,11 @@ struct ContentView: View {
                 }
                 .padding()
             }
-            .navigationDestination(isPresented: $showRatSite) {
+            .navigationDestination(isPresented: $showSite) {
                 RatSiteWebView(pendingBase64: $pendingInjectBase64, statusMessage: $statusMessage)
-                    .navigationTitle("Rat Monitor")
+                    .navigationTitle("Home Guardian")
                     .navigationBarTitleDisplayMode(.inline)
             }
         }
     }
 }
-

@@ -42,6 +42,8 @@ aside .card{border-left:4px solid var(--c,var(--bd));background:#fff}aside .card
 #obPop .pophd,#scPop .pophd{margin:0 -10px 4px;padding:9px 12px;border-radius:14px 14px 0 0;background:#e8f0fe}
 #scPop{width:390px;max-width:calc(100% - 24px)}.pets{gap:6px}.pet{background:#f8fafc;border:1px solid #eef1f6}.pet.sel{background:#e8f0fe;border-color:#c6dafc}
 .pet[data-pet=safe] b{color:#2563eb}.pet[data-pet=energy] b{color:#d97706}.pet[data-pet=pest] b{color:#15803d}.ci svg{display:block;margin:auto}
+.sv{margin:8px 0;padding:8px 10px;border:1px solid #cfe8d5;background:#f1faf3;border-radius:10px}.sv .vals div{background:#fff}
+#vp>#acPop{left:50%;top:50%;transform:translate(-50%,-50%);width:380px;max-width:calc(100% - 24px);max-height:calc(100% - 24px);overflow:auto;padding:0 12px 10px;z-index:9}#acPop .pophd{margin:0 -12px 6px;padding:9px 12px;border-radius:14px 14px 0 0;background:#e8f0fe}#acPop label.opt{display:block;padding:3px 0}
 @media(max-width:800px){main{flex-direction:column}aside{width:100%;height:48%;border-left:0;border-top:1px solid var(--bd)}}
 </style></head><body>
 <header><h1>Home Guardian</h1><button id="bDemo">Load demo living room</button><button id="bFile">Import scan (.json)</button>
@@ -49,7 +51,7 @@ aside .card{border-left:4px solid var(--c,var(--bd));background:#fff}aside .card
 <div id="banner"></div>
 <main><div id="vp"><button id="obBtn" title="Objects"></button>
 <div class="pop" id="obPop" hidden><div class="pophd"><b>Objects</b><button id="obX">✕</button></div><div id="p-obj"></div></div>
-<div class="pop" id="scPop"><div class="pophd"><b>Home quality</b><b id="scPct" style="flex:0">--</b><span id="scInfo">ⓘ</span><button id="scMin" title="Minimize">–</button></div><div id="p-score"></div></div></div><aside>
+<div class="pop" id="scPop"><div class="pophd"><b>Home quality</b><b id="scPct" style="flex:0">--</b><span id="scInfo">ⓘ</span><button id="scMin" title="Minimize">–</button></div><div id="p-score"></div></div><div class="pop" id="acPop" hidden></div></div><aside>
 <div class="tabs"></div>
 <div id="p-air" hidden></div><div id="p-energy" hidden></div><div id="p-cool" hidden></div><div id="p-inf" hidden></div><div id="p-fire" hidden></div><div id="p-ty" hidden></div><div id="p-out" hidden></div></aside></main>
 <footer>Supplementary alerts only: this does not replace certified smoke or fire alarms. Thresholds are demo reference values. Scans and models stay on this device.</footer>
@@ -209,7 +211,7 @@ function fromRoomPlan(r){const out=[];
   else if(d.type==='ceilingFan')out.push({type:'cfan',x:px,y:py-.2,z:pz,rot:0,dim:[1.2,.4,1.2]});
   else if(d.type==='fan')out.push({type:'fan',x:px,y:py+.6,z:pz,rot:0,dim:[.4,1.2,.4]})});return out}
 function importText(txt){let r;try{r=JSON.parse(txt)}catch{$('#st').textContent='Could not parse that JSON file.';return}
- const l=fromRoomPlan(r);if(!l.length){$('#st').textContent='The scan has no walls or objects.';return}build(l,'Scan imported')}
+ const l=fromRoomPlan(r);if(!l.length){$('#st').textContent='The scan has no walls or objects.';return}build(l,'Scan imported');acSetup()}
 window.importScanJSONText=importText;
 window.importScanJSONBase64=b=>{const s=atob(b),u=new Uint8Array(s.length);for(let i=0;i<s.length;i++)u[i]=s.charCodeAt(i);importText(new TextDecoder().decode(u))};
 window.notify=(level,message)=>{console.log('notify',level,message);window.webkit?.messageHandlers?.nativeBridge?.postMessage({type:'notify',level,message})};/* hook for your notification logic */
@@ -256,6 +258,7 @@ const ray=new THREE.Raycaster(),fl=new THREE.Plane(new THREE.Vector3(0,1,0),0);l
 rd.domElement.onpointerdown=e=>dn=[e.clientX,e.clientY];
 rd.domElement.onpointerup=e=>{if(!dn||Math.hypot(e.clientX-dn[0],e.clientY-dn[1])>4)return;
  const b=rd.domElement.getBoundingClientRect();ray.setFromCamera(new THREE.Vector2((e.clientX-b.left)/b.width*2-1,-(e.clientY-b.top)/b.height*2+1),cam);
+ if(acPick){const hh=ray.intersectObjects(world.children,true).find(x=>x.object.isMesh);let oo=hh&&hh.object;while(oo&&!oo.userData.it)oo=oo.parent;const w=oo&&oo.userData.it;if(w&&w.type==='wall')acWallSpot(w,hh.point);return}
  if(pick){const p=new THREE.Vector3();if(ray.ray.intersectPlane(fl,p)){sensor={...(sensor||{}),x:p.x,z:p.z,y:Math.min(1.5,room.ceil-.5),
   dW:near(p,of('window')),dD:near(p,of('door')),dH:near(p,heats()),relaxed:false,manual:true};pick=false;refresh()}return}
  const h=ray.intersectObjects(world.children,true).find(x=>x.object.isMesh);let o=h&&h.object;while(o&&!o.userData.it)o=o.parent;sel=o?o.userData.it:null;if(sel)openObj();refresh();document.querySelector('#p-obj .item.sel')?.scrollIntoView({block:'nearest'})};
@@ -554,7 +557,7 @@ function xl(root){busy=true;const w=document.createTreeWalker(root,NodeFilter.SH
  obs.takeRecords();busy=false}
 const obs=new MutationObserver(()=>{if(!busy)xl(document.body)});obs.observe(document.body,{childList:true,subtree:true,characterData:true});
 function setLang(l){lang=l;try{localStorage.setItem('hgLang',l)}catch{}document.documentElement.lang=l==='zh'?'zh-Hant':'en';
- $('#bLang').textContent=l==='zh'?'English':'中文';refresh();xl(document.body)}
+ $('#bLang').textContent=l==='zh'?'English':'中文';refresh();if(!$('#acPop').hidden)acRender();xl(document.body)}
 $('#bLang').onclick=()=>setLang(lang==='zh'?'en':'zh');
 
 /* ================= DLC: Cooling (west-sun window gain + AC / fan placement) ================= */
@@ -624,7 +627,7 @@ function pCool(){placeCool();const W=of('window');
  <div class="mu">${Z('Prototype scope: window solar gain and AC/fan geometry are in. Not yet: zoned heat-load model, measured hourly weather, real equipment data.','原型範圍：已含窗戶日射得熱與冷氣／風扇幾何檢查。尚未含：熱負荷分區模型、實際逐時氣象、設備性能資料。')}</div>`;
  $('#cOpt').onchange=e=>{cool.opt=e.target.value;cool.shgc=OPTS[cool.opt][2];cool.vlt=OPTS[cool.opt][3];pCool()};
  document.querySelectorAll('#p-cool [data-k]').forEach(i=>i.onchange=()=>{cool[i.dataset.k]=+i.value;pCool()});
- document.querySelectorAll('#p-cool [data-w]').forEach(i=>i.onchange=()=>{cool.west[i.dataset.w]=i.checked;pCool();drawOv()});sugCard();devCard();drawOv()}
+ document.querySelectorAll('#p-cool [data-w]').forEach(i=>i.onchange=()=>{cool.west[i.dataset.w]=i.checked;pCool();drawOv()});sugCard();acSizeCard();devCard();drawOv()}
 
 /* ================= Score overview: Safety / Energy / Pests ================= */
 let done={},alertMode=false;
@@ -678,9 +681,9 @@ function pScore(){if(!items.length){$('#scPct').textContent='--';$('#p-score').i
  const C=checks(),D={safe:dimScore('safe',C),energy:dimScore('energy',C),pest:dimScore('pest',C)},av=Object.values(D).filter(Boolean).map(d=>d.pct),all=av.length?Math.min(...av):null,nm=DN(),
  col=p=>p==null?'#9aa0a6':p>=80?'#188038':p>=60?'#e37400':'#d93025',mood=p=>p==null?'z':p>=90?'j':p>=80?'h':p>=60?'o':p>=40?'s':'a',
  low=C.filter(c=>c.lost>0).sort((a,b)=>b.lost-a.lost),dd=C.filter(c=>done[c.id]),un=C.filter(c=>c.st==='unk'),
- worst=Object.keys(D).filter(k=>D[k]&&D[k].pct<60).sort((a,b)=>D[a].pct-D[b].pct)[0]||null,cur=sd===undefined?worst:sd,
+ worst=Object.keys(D).filter(k=>D[k]&&D[k].pct<60).sort((a,b)=>D[a].pct-D[b].pct)[0]||null,cur=sd===undefined?worst:sd,SV=savings(),
  line={j:Z('Everything is great!','太棒了，一切順利！'),a:Z('Something is really wrong!','情況不妙，需要立刻處理！'),h:Z('All good here!','這裡一切都好！'),o:Z('A few things could be better.','有幾件事可以更好。'),s:Z("I'm worried… let me check the details.",'我有點擔心…我去檢查細項。'),z:Z('Zzz… waiting for data.','呼呼…等待資料。')},
- sg=JSON.stringify([D,cur,selC,pickPet,alertMode,lang,pi,C.map(c=>[c.id,c.lost,c.why,!!done[c.id]])]);
+ sg=JSON.stringify([D,cur,selC,pickPet,alertMode,lang,pi,SV,C.map(c=>[c.id,c.lost,c.why,!!done[c.id]])]);
  if(sg===lastSig&&$('#p-score').firstChild)return;lastSig=sg;/* skip identical re-renders so animations are not restarted every second */
  const z=110,r=z/2-8,cf=2*Math.PI*r,big=`<div style="text-align:center"><svg width="${z}" height="${z}"><circle cx="${z/2}" cy="${z/2}" r="${r}" fill="none" stroke="#e8eaed" stroke-width="8"/><circle cx="${z/2}" cy="${z/2}" r="${r}" fill="none" stroke="${col(all)}" stroke-width="8" stroke-linecap="round" stroke-dasharray="${all==null?0:all/100*cf} ${cf}" transform="rotate(-90 ${z/2} ${z/2})"/><text x="50%" y="56%" text-anchor="middle" font-size="26" font-weight="700" fill="${col(all)}">${all==null?'--':all+'%'}</text></svg><div class="mu"><b>${Z('Home quality','居家環境品質')}</b><br>${Z('lowest area sets the score','取最低的面向')}</div></div>`,
  pet=d=>{const p=D[d]?D[d].pct:null,m=mood(p),a=PETS[d][pi[d]];return `<div class="pet ${cur===d?'sel':''}" data-pet="${d}"><div class="pw"><svg viewBox="0 0 96 78" width="96" height="78"><path d="M8 62A40 40 0 0 1 88 62" fill="none" stroke="#e8eaed" stroke-width="7" stroke-linecap="round"/><path class="arc" data-v="${p==null?0:p}" pathLength="100" d="M8 62A40 40 0 0 1 88 62" fill="none" stroke="${col(p)}" stroke-width="7" stroke-linecap="round" style="stroke-dasharray:${pv[d]||0} 100"/><g transform="translate(48 50) scale(.78) translate(-48 -43)">${petBody(a,m)}</g>${m==='s'||m==='a'?'<circle cx="80" cy="60" r="5" fill="none" stroke="#5f6368" stroke-width="2"/><path d="M84 64l5 5" stroke="#5f6368" stroke-width="2" stroke-linecap="round"/>':''}</svg></div><div class="mu"><b>${nm[d]}</b> ${p==null?'--':p+'%'}<br>${Z(a[1],a[2])}</div></div>`},
@@ -694,6 +697,7 @@ function pScore(){if(!items.length){$('#scPct').textContent='--';$('#p-score').i
  $('#p-score').innerHTML=`<div class="pets">${Object.keys(PETS).map(pet).join('')}</div>
  <div class="row"><button id="pChg" class="${pickPet?'on':''}">${Z('Change pets','換寵物')}</button><label><input type="checkbox" id="aM" ${alertMode?'checked':''}> ${Z('Typhoon warning active (demo switch)','颱風警報中（示範開關）')}</label></div>
  ${pickPet?`<div>${Object.keys(PETS).map(d=>`<div class="row"><span class="mu" style="width:64px">${nm[d]}</span>${PETS[d].map((a,k)=>`<button data-pp="${d}:${k}" class="${pi[d]===k?'on':''}" title="${Z(a[1],a[2])}">${mini(a,'h')}</button>`).join('')}</div>`).join('')}<button id="pRnd">${svg('dice',16)} ${Z('Random','隨機')}</button></div>`:''}
+ ${svBlock(SV)}
  <div class="cicons">${CL.length?CL.map(ic).join(''):`<span class="mu">${Z('Nothing to fix right now.','目前沒有需要處理的項目。')}</span>`}</div>
  ${sc?`<div class="mu"><b>${sc.n}</b> ${sc.lost>0?`<span class="tag hi">-${Math.round(sc.lost)}</span>`:''}<br>${sc.why}</div>${sc.cd?`<div class="row"><button data-d="${sc.id}">${done[sc.id]?Z('Undo','復原'):Z('Mark done','標記完成')}</button></div>`:''}`:''}`;
  document.querySelectorAll('#p-score [data-c]').forEach(b=>b.onclick=()=>{selC=b.dataset.c;const c=C.find(x=>x.id===selC);if(c&&c.tab)go(c.tab);else pScore()});
@@ -711,9 +715,9 @@ function pScore(){if(!items.length){$('#scPct').textContent='--';$('#p-score').i
 function devUI(it){const d=it.dev,ac=it.type==='ac',fn=it.type==='fan',n=(k,l,st,lo,hi)=>`<label class="mu">${l}<input type="number" data-dv="${k}" step="${st}" min="${lo}" max="${hi}" value="${d[k]}" style="width:66px"></label>`,
  sw=l=>`<label><input type="checkbox" data-dv="swing" ${d.swing?'checked':''}> ${l}</label>`;
  return `<div class="mu" style="margin-top:6px"><b>${Z('Device','設備狀態')}</b></div><div class="row"><label><input type="checkbox" data-dv="on" ${d.on?'checked':''}> ${Z('On','開啟')}</label>${n('w',Z('Power W','功率 W'),10,0,5000)}${n('h',Z('Hours/day','每日小時'),.5,0,24)}</div>`+
- (ac?`<div class="row">${n('set',Z('Set °C','設定 °C'),1,16,30)}${n('dir',Z('Aim ° (-60…60)','出風角度'),5,-60,60)}${sw(Z('Swing','擺風'))}</div>`:'')+
+ (ac?`<div class="row">${n('set',Z('Set °C','設定 °C'),1,16,30)}${n('dir',Z('Aim ° (-60…60)','出風角度'),5,-60,60)}${sw(Z('Swing','擺風'))}</div>${brandRow(d)}`:'')+
  (fn?`<div class="row">${n('dir',Z('Aim ° (-180…180)','朝向角度'),15,-180,180)}${sw(Z('Oscillate','擺頭'))}</div>`:'')}
-function devWire(){document.querySelectorAll('#p-obj [data-dv]').forEach(e=>e.onchange=()=>{if(!sel||!sel.dev)return;const k=e.dataset.dv;sel.dev[k]=e.type==='checkbox'?e.checked:+e.value;sync(sel);refresh()})}
+function devWire(){document.querySelectorAll('#p-obj [data-dv]').forEach(e=>e.onchange=()=>{if(!sel||!sel.dev)return;const k=e.dataset.dv;sel.dev[k]=e.type==='checkbox'?e.checked:(k==='brand'?e.value:+e.value);sync(sel);refresh()})}
 /* which seats a device blows on: the item's front (+Z) turned by its aim, a 30° half-angle (60° when swinging), 6 m reach for AC, 4 m for a fan; tall furniture (1.2 m+) on the line blocks it */
 function cover(a){if(a.type==='cfan'){const S=items.filter(i=>['chair','sofa','bed'].includes(i.type)),c=S.filter(t=>Math.hypot(t.x-a.x,t.z-a.z)<=2.2).length;return{n:S.length,c,b:0,v:{x:0,z:1},reach:2.2,half:0}}const d=a.dev,O=items.filter(i=>!isS(i.type)),seats=O.filter(i=>['chair','sofa','bed'].includes(i.type)),th=a.rot+d.dir*Math.PI/180,v={x:Math.sin(th),z:Math.cos(th)},half=(d.swing?60:30)*Math.PI/180,reach=a.type==='fan'?4:6;let c=0,b=0;
  seats.forEach(t=>{const dx=t.x-a.x,dz=t.z-a.z,L=Math.hypot(dx,dz);if(L>reach||L<.1)return;if(Math.acos(Math.max(-1,Math.min(1,(dx*v.x+dz*v.z)/L)))>half)return;
@@ -822,6 +826,67 @@ function sugCard(){const f=k=>{const c=k==='ac'?cool.ac:cool.fan,R=k==='ac'?cool
  document.querySelectorAll('#p-cool [data-sn]').forEach(b=>b.onclick=()=>{const k=b.dataset.sn,c=k==='ac'?cool.ac:cool.fan;if(c){SG.last[k]=c;SG.rej[k].push(c.key)}pCool()});
  document.querySelectorAll('#p-cool [data-sp]').forEach(b=>b.onclick=()=>placeSug(b.dataset.sp));
  $('#sgR').onclick=()=>{SG.rej={ac:[],fan:[],sensor:[]};SG.last={};SG.prevS=null;SG.w=.5;recSensor();pCool()}}
+
+/* ================= AC setup after import: brand, position, automatic size ================= */
+const BRANDS=[['Daikin','大金'],['Hitachi','日立'],['Mitsubishi Electric','三菱電機'],['Mitsubishi Heavy Industries','三菱重工'],['Panasonic','國際牌'],['TECO','東元'],['Gree','格力'],['HERAN','禾聯'],['Other / not sure','其他／不確定']],
+ CAPS=[2.2,2.8,3.6,4.5,5.6,7.1,8.0];/* common split-unit cooling capacities in kW; 1 ton is about 3.5 kW */
+let acS={brand:BRANDS.length-1,choice:'s0',pos:null},acPick=false;
+function roomBox(){const ws=of('wall');if(!ws.length)return null;const xs=[],zs=[];ws.forEach(w=>{const h=w.dim[0]/2;xs.push(w.x-Math.cos(w.rot)*h,w.x+Math.cos(w.rot)*h);zs.push(w.z+Math.sin(w.rot)*h,w.z-Math.sin(w.rot)*h)});return{x0:Math.min(...xs),x1:Math.max(...xs),z0:Math.min(...zs),z1:Math.max(...zs)}}
+/* Rule-of-thumb peak load: 100 W per m2 of floor (scaled by ceiling height) + west-window sun at peak + people (130 W each, sensible and latent) + equipment, plus a 10% margin. For planning only. */
+function sizeAC(){const b=roomBox();if(!b)return null;const A=(b.x1-b.x0)*(b.z1-b.z0),gl=westWins().reduce((a,w)=>a+w.dim[0]*w.dim[1],0),
+ base=A*100*room.ceil/2.5,sol=gl*cool.shgc*Math.max(...IRR),ppl=cool.ppl*130,inl=cool.inl,tot=(base+sol+ppl+inl)*1.1,kw=tot/1000,
+ cap=CAPS.find(c=>c>=kw),n=cap?1:Math.ceil(kw/CAPS[CAPS.length-1]),use=cap||CAPS[CAPS.length-1];
+ return{A,base,sol,ppl,inl,tot,kw,cap:use,n,ton:use/3.5,btu:use*3412,ping:A/3.3058,over:!!cap&&cap/kw>1.4}}
+function sizeHtml(S){return `<div class="card" style="border-left-color:#3b82f6"><b>${Z('Recommended','建議規格')}: ${r1(S.cap)} kW${S.n>1?` × ${S.n}`:''} · ${r2(S.cap/3.5)} ${Z('ton','噸')} · ${Math.round(S.btu/100)*100} BTU/h</b>
+ <div class="mu">${Z('Room','房間')} ${r1(S.A)} m² (${r1(S.ping)} ${Z('ping','坪')}), ${Z('ceiling','天花板')} ${r2(room.ceil)} m. ${Z('Peak load','尖峰負荷')} ${r2(S.kw)} kW (${Z('incl. 10% margin','含 10% 餘裕')}).</div>
+ <table class="ct"><tr><td>${Z('Floor and ceiling','房間本身')}</td><td>${Math.round(S.base)} W</td></tr><tr><td>${Z('West window sun (SHGC '+r2(cool.shgc)+')','西曬窗日射（SHGC '+r2(cool.shgc)+'）')}</td><td>${Math.round(S.sol)} W</td></tr><tr><td>${Z('People','人員')} (${cool.ppl})</td><td>${Math.round(S.ppl)} W</td></tr><tr><td>${Z('Equipment','設備')}</td><td>${Math.round(S.inl)} W</td></tr></table>
+ ${S.n>1?`<div class="mu">${svg('warn',14)} ${Z('The load is above the largest single unit: plan two units or split the space.','負荷超過單台最大規格：建議規劃兩台或分區。')}</div>`:''}${S.over?`<div class="mu">${Z('The nearest standard size is well above the load; a smaller or inverter model avoids short cycling.','最接近的標準規格明顯大於負荷；選較小或變頻機型可避免頻繁啟停。')}</div>`:''}
+ <div class="mu">${Z('Change the shading option or the number of people in Cooling and the size updates. Planning estimate only: ask an installer to confirm, and compare the energy label (CSPF) of each model.','在「降溫」分頁改遮陽方式或人數，規格會隨之更新。僅為規劃估算：請由安裝人員確認，並比較各機型的能源效率標示（CSPF）。')}</div></div>`}
+function wallSpot(w,px,pz){const ws=of('wall'),cx=ws.reduce((a,q)=>a+q.x,0)/ws.length,cz=ws.reduce((a,q)=>a+q.z,0)/ws.length,dx=Math.cos(w.rot),dz=-Math.sin(w.rot);let nx=Math.sin(w.rot),nz=Math.cos(w.rot);if((cx-w.x)*nx+(cz-w.z)*nz<0){nx=-nx;nz=-nz}
+ const lim=Math.max(0,w.dim[0]/2-.45),s=Math.max(-lim,Math.min(lim,px==null?0:(px-w.x)*dx+(pz-w.z)*dz)),x=w.x+dx*s+nx*.15,z=w.z+dz*s+nz*.15,rot=Math.atan2(nx,nz),S=items.filter(i=>['chair','sofa','bed'].includes(i.type)),
+  th=S.length?Math.atan2(S.reduce((a,t)=>a+t.x,0)/S.length-x,S.reduce((a,t)=>a+t.z,0)/S.length-z):rot;
+ return{x,z,y:Math.min(2.5,room.ceil-.3),rot,dir:Math.max(-60,Math.min(60,Math.round(ad(th,rot)*180/Math.PI)))}}
+function acCands(){const R=(cool.acR||[]).slice(0,3).map((c,i)=>({k:'s'+i,pos:{x:c.x,y:c.y,z:c.z,rot:c.rot,dir:Math.max(-60,Math.min(60,Math.round(ad(c.th,c.rot)*180/Math.PI)))},
+  txt:`${Z('Suggested','建議')} ${i+1}: ${sg(c.e,2)} kWh/${Z('day','日')}, ${Z('clearance','淨空')} ${Math.round(c.pl)}%, ${c.cv}/${c.n} ${Z('seats','座位')}`}));
+ if(R.length)return R;const W=of('window');
+ return of('wall').filter(w=>!W.some(x=>rectDist(x,w)<.4)).sort((a,b)=>b.dim[0]-a.dim[0]).slice(0,3).map((w,i)=>({k:'s'+i,pos:wallSpot(w),txt:`${Z('Wall','牆面')} ${i+1}: ${r1(w.dim[0])} m, ${Z('no window','沒有窗')}`}))}
+function startPick(){acS.choice='pick';acPick=true;$('#acPop').hidden=true;$('#st').textContent=Z('Tap a wall in the 3D view to place the AC','請在 3D 畫面點選要裝冷氣的牆面')}
+function acWallSpot(w,pt){acS.pos=wallSpot(w,pt.x,pt.z);acS.choice='pick';acPick=false;$('#acPop').hidden=false;acRender()}
+function acRender(){const S=sizeAC(),C=acCands(),ex=of('ac')[0];
+ $('#acPop').innerHTML=`<div class="pophd"><b>${Z('Air conditioner setup','冷氣設定')}</b><button id="acX">✕</button></div>
+ <div class="mu">${Z('Choose a brand and a position. The program then works out the size and tonnage for this room.','選擇冷氣品牌與位置，程式會依這個房間自動計算適合的尺寸與噸數。')}</div>
+ <b>1. ${Z('Brand','品牌')}</b><div class="row"><select id="acB">${BRANDS.map((b,i)=>`<option value="${i}" ${i===acS.brand?'selected':''}>${Z(b[0],b[1])}</option>`).join('')}</select></div>
+ <b>2. ${Z('Position','位置')}</b>
+ ${ex?`<label class="opt"><input type="radio" name="acP" value="scan" ${acS.choice==='scan'?'checked':''}> ${Z(`Use the AC already in the model (#${ex.id})`,`使用模型中已有的冷氣（#${ex.id}）`)}</label>`:''}
+ ${C.map(o=>`<label class="opt"><input type="radio" name="acP" value="${o.k}" ${acS.choice===o.k?'checked':''}> ${o.txt}</label>`).join('')}
+ <label class="opt"><input type="radio" name="acP" value="pick" ${acS.choice==='pick'?'checked':''}> ${Z('Pick a wall in the 3D view','在 3D 畫面點選牆面')}${acS.choice==='pick'&&acS.pos?' ✓':''}</label>
+ <b>3. ${Z('Size (automatic)','尺寸（自動判斷）')}</b>${S?sizeHtml(S):`<div class="mu">${Z('No walls found.','找不到牆面。')}</div>`}
+ <div class="row"><button id="acOk" class="on">${Z('Confirm','確定')}</button><button id="acSkip">${Z('Skip','略過')}</button></div>`;
+ $('#acB').onchange=e=>{acS.brand=+e.target.value};
+ document.querySelectorAll('#acPop [name=acP]').forEach(r=>r.onchange=()=>{if(r.value==='pick'){startPick()}else{acS.choice=r.value;acRender()}});
+ $('#acX').onclick=$('#acSkip').onclick=()=>{$('#acPop').hidden=true};$('#acOk').onclick=acApply}
+function acSetup(){if(!of('wall').length)return;placeCool();acS={brand:BRANDS.length-1,choice:of('ac').length?'scan':'s0',pos:null};acPick=false;acRender();$('#acPop').hidden=false}
+function acApply(){const S=sizeAC(),b=BRANDS[acS.brand];let it;
+ if(acS.choice==='scan')it=of('ac')[0];
+ else{const p=acS.choice==='pick'?acS.pos:(acCands().find(o=>o.k===acS.choice)||{}).pos;if(!p){startPick();return}
+  it=addItem({type:'ac',x:p.x,y:p.y,z:p.z,rot:p.rot,dim:[.9,.3,.25],auto:false});it.dev.dir=p.dir}
+ if(!it)return;it.dev.on=true;it.dev.brand=b[0];if(S){it.dev.cap=S.cap;it.dev.w=Math.round(S.cap*1000/cool.cop*.5)}
+ sync(it);$('#acPop').hidden=true;recSensor();tab='cool';refresh()}
+function acSizeCard(){const S=sizeAC();if(!S)return;const a=of('ac')[0];
+ $('#p-cool').insertAdjacentHTML('beforeend',`<div class="card"><b>${Z('AC size and tonnage','冷氣尺寸與噸數')}</b>${sizeHtml(S)}${a&&a.dev.brand?`<div class="mu">${Z('Placed','已放置')}: ${a.dev.brand}${a.dev.cap?`, ${r1(a.dev.cap)} kW. ${Z('Running power is set to about half of full-load input (inverter average): ','運轉功率設為滿載輸入的一半左右（變頻平均）：')}${a.dev.w} W`:''}</div>`:''}<div class="row"><button id="acRe">${Z('Choose brand and position again','重新選擇品牌與位置')}</button></div></div>`);
+ $('#acRe').onclick=()=>acSetup()}
+function brandRow(d){return `<div class="row"><label class="mu">${Z('Brand','品牌')}<select data-dv="brand"><option value="">-</option>${BRANDS.map(b=>`<option value="${b[0]}" ${d.brand===b[0]?'selected':''}>${Z(b[0],b[1])}</option>`).join('')}</select></label>${d.cap?`<span class="mu">${r1(d.cap)} kW · ${r2(d.cap/3.5)} ${Z('ton','噸')}</span>`:''}</div>`}
+
+/* ================= Savings: electricity, CO2 and money for Home quality ================= */
+const EF=.471;/* kg CO2e per kWh: residential electricity emission factor for 2025 (MOEA Energy Administration, announced 2026-06-02). Update each year. */
+function savings(){const so=['','',cool.shgc,cool.vlt],fo=!!done.fan||items.some(i=>(i.type==='fan'||i.type==='cfan')&&i.dev&&i.dev.on),base=calc(OPTS.none,0).e,cur=calc(so,fo),
+ pa=Math.max(0,cur.e-calc(OPTS.ext,fo).e),pb=fo?0:Math.max(0,calc(so,0).e-calc(so,1).e);let kwh=base-cur.e,pot=pa+pb;
+ items.filter(i=>i.type==='ac'&&i.dev&&i.dev.on).forEach(a=>{const k=a.dev.w*a.dev.h/1000,s=a.dev.set;kwh+=Math.min(.4,Math.max(0,s-24)*cool.pct/100)*k;pot+=Math.min(.4,Math.max(0,26-s)*cool.pct/100)*k});
+ return{kwh,pot,kg:kwh*EF,nt:kwh*rate}}
+function svBlock(V){return `<div class="sv"><b>${Z('Energy saved','已節省')}</b> <span class="mu">${Z('per day (estimate)','每日（估算）')}</span>
+ <div class="vals"><div><b>${r2(V.kwh)}</b>kWh</div><div><b>${r2(V.kg)}</b>kg CO₂</div><div><b>${r1(V.nt)}</b>NT$</div></div>
+ <div class="mu">${Z('Per month','每月')}: ${r1(V.kwh*30)} kWh · ${r1(V.kg*30)} kg CO₂ · NT$ ${Math.round(V.nt*30)}. ${Z('Could still save','還可再省')} ${r2(V.pot)} kWh/${Z('day','日')} (${r2(V.pot*EF)} kg CO₂, NT$ ${r1(V.pot*rate)}).</div>
+ <div class="mu">${Z(`Modelled from what you have done (shading, fan, AC setpoint), not metered. CO₂ uses ${EF} kg/kWh, the 2025 Taiwan residential factor (MOEA Energy Administration).`,`依你已做的調整（遮陽、風扇、冷氣設定溫度）模型估算，非實測。CO₂ 以 ${EF} 公斤／度計算（2025 年度台灣民生住宅電力排碳係數，經濟部能源署）。`)}</div></div>`}
 refresh();
 if(lang==='zh')setLang('zh');
 

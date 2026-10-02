@@ -228,3 +228,4 @@ final class DeviceMarker: NSObject {
         return try JSONSerialization.data(withJSONObject: obj, options: [.prettyPrinted, .sortedKeys])
     }
 }
+

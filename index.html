@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Home Guardian</title>
+<title>Feng Shui</title>
 <style>
 :root{--bg:#f4f6f9;--pn:#fff;--bd:#dadce0;--tx:#202124;--mu:#5f6368;--bl:#1a73e8;--am:#e37400;--rd:#d93025}
 *{box-sizing:border-box}html,body{height:100%;margin:0}
@@ -46,7 +46,7 @@ aside .card{border-left:4px solid var(--c,var(--bd));background:#fff}aside .card
 #vp>#acPop{left:50%;top:50%;transform:translate(-50%,-50%);width:380px;max-width:calc(100% - 24px);max-height:calc(100% - 24px);overflow:auto;padding:0 12px 10px;z-index:9}#acPop .pophd{margin:0 -12px 6px;padding:9px 12px;border-radius:14px 14px 0 0;background:#e8f0fe}#acPop label.opt{display:block;padding:3px 0}
 @media(max-width:800px){main{flex-direction:column}aside{width:100%;height:48%;border-left:0;border-top:1px solid var(--bd)}}
 </style></head><body>
-<header><h1>Home Guardian</h1><button id="bDemo">Load demo living room</button><button id="bFile">Import scan (.json)</button>
+<header><h1>Feng Shui</h1><button id="bDemo">Load demo living room</button><button id="bFile">Import scan (.json)</button>
 <button id="bLang">中文</button><input type="file" id="fIn" accept=".json" hidden><span id="st" style="font-size:12px;opacity:.85">No scan loaded</span></header>
 <div id="banner"></div>
 <main><div id="vp"><button id="obBtn" title="Objects"></button>
@@ -327,7 +327,7 @@ let hist=[],lastSeen=0,lastLv=0,evts=[],cli=null,simT=null,simScen='off',sim={},
  mUrl='wss://broker.emqx.io:8084/mqtt',mTop='home-guardian/demo/sensor';
 const sensorHex=()=>lastSeen&&Date.now()-lastSeen>20000?0x6b7280:[0x188038,0xe37400,0xd93025][lastLv];
 function ntopic(){let t=null;try{t=localStorage.getItem('hgTopic')}catch{}
- if(!t){t='home-guardian-'+Math.random().toString(36).slice(2,8);try{localStorage.setItem('hgTopic',t)}catch{}}return t}
+ if(!t){t='feng-shui-'+Math.random().toString(36).slice(2,8);try{localStorage.setItem('hgTopic',t)}catch{}}return t}
 function unlock(){try{actx=actx||new(window.AudioContext||window.webkitAudioContext)();actx.resume()}catch{}}
 function alarm(on){clearInterval(beepT);beepT=null;if(!on||!alarmOn||!actx)return;
  const b=()=>{const o=actx.createOscillator(),g=actx.createGain();o.frequency.value=880;g.gain.value=.25;o.connect(g);g.connect(actx.destination);o.start();o.stop(actx.currentTime+.3)};b();beepT=setInterval(b,600)}
@@ -354,14 +354,14 @@ function evalNow(){const r=hist[hist.length-1];if(!r)return;const old=hist.find(
  if(r.W>=1500)cur.pwr=[1,'Power draw is high ('+R(r.W)+' W), near a typical outlet circuit limit (about 1650 W). Reduce heavy appliances.'];
  const now=Date.now(),ks=Object.keys(cur);
  ks.forEach(k=>{const[l,m]=cur[k];if(!act[k]||act[k][0]<l){evts.unshift(`${new Date().toLocaleTimeString()} ${m}`);window.notify?.(l,tr(m));
-   if(l===2)push('Home Guardian ALERT',m,5,'rotating_light');
-   else if(!lastPush[k]||now-lastPush[k]>600000){push('Home Guardian notice',m,2,'information_source');lastPush[k]=now}}});
- if(!ks.length&&Object.keys(act).length){evts.unshift(`${new Date().toLocaleTimeString()} Back to normal`);push('Home Guardian','All issues cleared.',2,'white_check_mark')}
+   if(l===2)push('Feng Shui ALERT',m,5,'rotating_light');
+   else if(!lastPush[k]||now-lastPush[k]>600000){push('Feng Shui notice',m,2,'information_source');lastPush[k]=now}}});
+ if(!ks.length&&Object.keys(act).length){evts.unshift(`${new Date().toLocaleTimeString()} Back to normal`);push('Feng Shui','All issues cleared.',2,'white_check_mark')}
  evts=evts.slice(0,8);act=cur;const lv=ks.length?Math.max(...ks.map(k=>cur[k][0])):0;lastLv=lv;
  alarm(lv===2);banner(lv,ks.sort((x,y)=>cur[y][0]-cur[x][0]).map(k=>cur[k][1]).join('  |  '));paintVals();paintAir();pScore();drawOv()}
 function banner(lv,msg){const b=$('#banner');b.className=lv?'l'+lv:'';b.textContent=lv?msg:''}
 setInterval(()=>{if(lastSeen&&Date.now()-lastSeen>20000){banner(3,'⚠ Air box offline for over 20 s: nothing is being monitored. Check power and network.');alarm(false);
- if(!offSent){offSent=true;window.notify?.(3,tr('Air box offline'));push('Home Guardian','Air box offline for over 20 s. Nothing is being monitored.',4,'warning')}paintVals();paintAir();pScore();drawOv()}},2000);
+ if(!offSent){offSent=true;window.notify?.(3,tr('Air box offline'));push('Feng Shui','Air box offline for over 20 s. Nothing is being monitored.',4,'warning')}paintVals();paintAir();pScore();drawOv()}},2000);
 function spark(id,k,lo,hi,c){const cv=$(id);if(!cv)return;const g=cv.getContext('2d');g.clearRect(0,0,300,46);const pt=hist.filter(p=>!isNaN(p[k]));if(pt.length<2)return;
  g.strokeStyle=c;g.lineWidth=1.5;g.beginPath();pt.forEach((p,i)=>{const x=i/(pt.length-1)*300,y=44-(Math.min(Math.max(p[k],lo),hi)-lo)/(hi-lo)*42;i?g.lineTo(x,y):g.moveTo(x,y)});g.stroke()}
 const stat=()=>!lastSeen?'No data yet':Date.now()-lastSeen>20000?'Offline':['Normal','Notice','ALERT'][lastLv];
@@ -380,7 +380,7 @@ function fireLive(){$('#p-fire').insertAdjacentHTML('beforeend',`<div class="car
  <div class="card"><b>Events</b><div class="mu" id="evl">No events yet</div></div>
  <div class="mu">Thresholds (demo values): CO₂ ≥1000 ppm notice, ≥2000 ppm alert (usually poor ventilation, not fire). Temperature ≥40 °C notice; ≥57 °C, a rise of ≥8 °C in 1 min, or ≥45 °C with CO₂ climbing fast counts as possible fire. Humidity ≥75% notice. No data for 20 s means offline. Red alerts sound the alarm and push to your phone; notices push quietly, at most once per 10 minutes per type.</div>`);
  $('#bConn').onclick=()=>{unlock();mUrl=$('#mUrl').value.trim();mTop=$('#mTop').value.trim();connect()};
- $('#bNt').onclick=()=>{unlock();push('Home Guardian test','This is a test notification.',3,'white_check_mark')};
+ $('#bNt').onclick=()=>{unlock();push('Feng Shui test','This is a test notification.',3,'white_check_mark')};
  $('#nTop').onchange=e=>{try{localStorage.setItem('hgTopic',e.target.value.trim())}catch{}};$('#aOn').onchange=e=>{alarmOn=e.target.checked;unlock()};wireSim();paintVals()}
 const pmLv=p=>p<15.5?'Good':p<35.5?'Moderate':p<54.5?'Unhealthy for sensitive groups':p<150.5?'Unhealthy':'Very unhealthy';
 function pAir(){const A=`<div class="card"><b>Indoor air (PM2.5)</b><div class="vals" style="grid-template-columns:1fr 1fr"><div><b id="vP">--</b>µg/m³</div><div><b id="vPl" style="font-size:14px">--</b>level</div></div><canvas class="sp" id="spP" width="300" height="46"></canvas>
@@ -529,10 +529,10 @@ Power draw is high (=>用電量偏高（
 ⚠ Air box offline for over 20 s: nothing is being monitored. Check power and network.=>⚠ 空氣盒離線超過 20 秒，目前沒有監測，請檢查電源與網路。
 Air box offline for over 20 s. Nothing is being monitored.=>空氣盒離線超過 20 秒，目前沒有監測。
 Air box offline=>空氣盒離線
-Home Guardian ALERT=>居家守護警報
-Home Guardian notice=>居家守護提醒
-Home Guardian test=>居家守護測試
-Home Guardian=>居家守護
+Feng Shui ALERT=>風水警報
+Feng Shui notice=>風水提醒
+Feng Shui test=>風水測試
+Feng Shui=>風水
 All issues cleared.=>所有異常已恢復正常。
 This is a test notification.=>這是一則測試通知。
 Indoor air (PM2.5)=>室內空氣（PM2.5）

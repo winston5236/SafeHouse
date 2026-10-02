@@ -374,7 +374,7 @@ final class RatSiteCoordinator: NSObject, WKNavigationDelegate, WKScriptMessageH
         if type == "scanImported" {
             let walls = body["walls"] as? Int ?? 0
             let objects = body["objects"] as? Int ?? 0
-            onStatus?("Loaded into Home Guardian — \(walls) walls, \(objects) objects placed.")
+            onStatus?("Loaded into Feng Shui — \(walls) walls, \(objects) objects placed.")
         }
     }
 }
@@ -455,7 +455,7 @@ struct RatSiteWebView: View {
 
             if let error = loadError {
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("Home Guardian didn't load").font(.headline)
+                    Text("Feng Shui didn't load").font(.headline)
                     Text(error).font(.footnote)
                     Button("Reload") {
                         loadError = nil
@@ -496,7 +496,7 @@ struct ContentView: View {
                             pendingInjectBase64 = lastRoomJSONBase64
                             showSite = true
                         } label: {
-                            Label("View in Home Guardian", systemImage: "house.fill")
+                            Label("View in Feng Shui", systemImage: "house.fill")
                         }
                         .buttonStyle(.borderedProminent)
 
@@ -516,7 +516,7 @@ struct ContentView: View {
             }
             .navigationDestination(isPresented: $showSite) {
                 RatSiteWebView(pendingBase64: $pendingInjectBase64, statusMessage: $statusMessage)
-                    .navigationTitle("Home Guardian")
+                    .navigationTitle("Feng Shui")
                     .navigationBarTitleDisplayMode(.inline)
             }
         }
